@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Dependencies
 node_modules/
 npm-debug.log*
@@ -180,3 +181,6 @@ build/Release
 
 # TernJS port file
 .tern-port
+=======
+node_modules
+>>>>>>> main
