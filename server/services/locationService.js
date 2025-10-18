@@ -4,7 +4,7 @@ const googlemaps = require('googlemaps');
 class LocationService {
   constructor() {
     // Initialize Google Maps client with API key
-    this.gmaps = new googlemaps.Client({
+    this.gmaps = googlemaps({
       key: process.env.GOOGLE_MAPS_API_KEY || 'YOUR_API_KEY_HERE',
       stagger_time: 1000, // 1 second between requests
       encode_polylines: false,
@@ -17,11 +17,16 @@ class LocationService {
     try {
       console.log(`🗺️ Geocoding location: ${latitude}, ${longitude}`);
       
-      // Reverse geocoding to get address
-      const geocodeResult = await this.gmaps.reverseGeocode({
-        latlng: `${latitude},${longitude}`,
-        result_type: ['street_address', 'route', 'locality', 'administrative_area_level_1', 'country'],
-        location_type: ['ROOFTOP', 'RANGE_INTERPOLATED']
+      // Convert callback-based API to promise
+      const geocodeResult = await new Promise((resolve, reject) => {
+        this.gmaps.reverseGeocode({
+          latlng: `${latitude},${longitude}`,
+          result_type: ['street_address', 'route', 'locality', 'administrative_area_level_1', 'country'],
+          location_type: ['ROOFTOP', 'RANGE_INTERPOLATED']
+        }, (err, data) => {
+          if (err) reject(err);
+          else resolve(data);
+        });
       });
 
       if (geocodeResult.status === 'OK' && geocodeResult.results.length > 0) {
@@ -54,11 +59,16 @@ class LocationService {
     try {
       console.log(`🔍 Finding nearby places near: ${latitude}, ${longitude}`);
       
-      const placesResult = await this.gmaps.placesNearby({
-        location: `${latitude},${longitude}`,
-        radius: radius,
-        type: type,
-        rankby: 'distance'
+      const placesResult = await new Promise((resolve, reject) => {
+        this.gmaps.placesNearby({
+          location: `${latitude},${longitude}`,
+          radius: radius,
+          type: type,
+          rankby: 'distance'
+        }, (err, data) => {
+          if (err) reject(err);
+          else resolve(data);
+        });
       });
 
       if (placesResult.status === 'OK') {
@@ -94,9 +104,14 @@ class LocationService {
     try {
       console.log(`📋 Getting details for place: ${placeId}`);
       
-      const placeDetails = await this.gmaps.placeDetails({
-        place_id: placeId,
-        fields: ['name', 'formatted_address', 'geometry', 'rating', 'price_level', 'opening_hours', 'photos', 'reviews']
+      const placeDetails = await new Promise((resolve, reject) => {
+        this.gmaps.placeDetails({
+          place_id: placeId,
+          fields: ['name', 'formatted_address', 'geometry', 'rating', 'price_level', 'opening_hours', 'photos', 'reviews']
+        }, (err, data) => {
+          if (err) reject(err);
+          else resolve(data);
+        });
       });
 
       if (placeDetails.status === 'OK') {
@@ -124,12 +139,17 @@ class LocationService {
     try {
       console.log(`📏 Calculating distance from ${origin} to ${destination}`);
       
-      const distanceMatrix = await this.gmaps.distanceMatrix({
-        origins: [origin],
-        destinations: [destination],
-        mode: mode,
-        units: 'metric',
-        avoid: 'tolls'
+      const distanceMatrix = await new Promise((resolve, reject) => {
+        this.gmaps.distanceMatrix({
+          origins: [origin],
+          destinations: [destination],
+          mode: mode,
+          units: 'metric',
+          avoid: 'tolls'
+        }, (err, data) => {
+          if (err) reject(err);
+          else resolve(data);
+        });
       });
 
       if (distanceMatrix.status === 'OK' && distanceMatrix.rows[0].elements[0].status === 'OK') {
@@ -160,12 +180,17 @@ class LocationService {
     try {
       console.log(`🧭 Getting directions from ${origin} to ${destination}`);
       
-      const directions = await this.gmaps.directions({
-        origin: origin,
-        destination: destination,
-        mode: mode,
-        avoid: 'tolls',
-        alternatives: false
+      const directions = await new Promise((resolve, reject) => {
+        this.gmaps.directions({
+          origin: origin,
+          destination: destination,
+          mode: mode,
+          avoid: 'tolls',
+          alternatives: false
+        }, (err, data) => {
+          if (err) reject(err);
+          else resolve(data);
+        });
       });
 
       if (directions.status === 'OK' && directions.routes.length > 0) {
