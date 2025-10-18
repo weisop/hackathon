@@ -62,10 +62,6 @@ const Leaderboard = () => {
                   ))}
                 </ol>
               )}
-
-              <p className="mt-6 text-sm text-gray-500">
-                Placeholder data — replace with a backend API when available.
-              </p>
             </div>
           </div>
         </div>

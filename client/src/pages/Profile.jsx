@@ -1,7 +1,28 @@
+import React, { useRef, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
 const Profile = () => {
   const { user, signOut } = useAuth();
+  const [imagePreview, setImagePreview] = useState(user?.photoURL || null);
+  const fileInputRef = useRef(null);
+
+  const initials = (user?.name || 'User')
+    .split(' ')
+    .map((n) => n[0] || '')
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => setImagePreview(reader.result);
+    reader.readAsDataURL(file);
+
+    // TODO: send `file` or `reader.result` to backend or an auth/profile update function
+    // e.g. await updateProfile({ photo: file })
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -19,32 +40,61 @@ const Profile = () => {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+      <main className="max-w-3xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
-          <div className="bg-white shadow rounded-lg">
-            <div className="px-4 py-5 sm:p-6">
-              <h2 className="text-lg font-medium text-gray-900 mb-6">User Information</h2>
-              
-              <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">Name</dt>
-                  <dd className="mt-1 text-sm text-gray-900">{user?.name || 'Not provided'}</dd>
-                </div>
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">Email</dt>
-                  <dd className="mt-1 text-sm text-gray-900">{user?.email || 'Not provided'}</dd>
-                </div>
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">User ID</dt>
-                  <dd className="mt-1 text-sm text-gray-900">{user?.id || 'Not available'}</dd>
-                </div>
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">Member since</dt>
-                  <dd className="mt-1 text-sm text-gray-900">
-                    {user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'Not available'}
-                  </dd>
-                </div>
-              </dl>
+          <div className="bg-white shadow rounded-lg p-6">
+            <div className="flex items-center space-x-6">
+              <div className="relative">
+                {imagePreview ? (
+                  <img
+                    src={imagePreview}
+                    alt="Profile"
+                    className="w-28 h-28 rounded-full object-cover border"
+                  />
+                ) : (
+                  <div className="w-28 h-28 rounded-full bg-primary-600 text-white flex items-center justify-center text-2xl font-bold border">
+                    {initials}
+                  </div>
+                )}
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="mt-3 w-full text-sm bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-md"
+                >
+                  Change Photo
+                </button>
+              </div>
+
+              <div className="flex-1">
+                <div className="text-lg font-semibold text-gray-900">{user?.name || 'User'}</div>
+                <div className="text-sm text-gray-500">{user?.email}</div>
+
+                <p className="mt-4 text-sm text-gray-600">
+                  Upload a profile image to personalize your account. This preview is local — add a
+                  backend upload or profile update call to persist the image.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 border-t pt-4 flex space-x-3">
+              <button className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-md text-sm font-medium">
+                Save Profile
+              </button>
+              <button
+                onClick={() => {
+                  setImagePreview(user?.photoURL || null);
+                }}
+                className="bg-white border border-gray-300 px-4 py-2 rounded-md text-sm"
+              >
+                Reset
+              </button>
             </div>
           </div>
         </div>
