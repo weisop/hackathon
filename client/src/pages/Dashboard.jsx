@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { apiService } from '../services/api';
+import MapView from '../components/MapView';
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
@@ -8,6 +9,8 @@ const Dashboard = () => {
   const [newItem, setNewItem] = useState('');
   const [loading, setLoading] = useState(false);
   const [serverStatus, setServerStatus] = useState('unknown');
+  const [showMap, setShowMap] = useState(false);
+  const [userLocation, setUserLocation] = useState(null);
 
   useEffect(() => {
     checkServerHealth();
@@ -78,6 +81,11 @@ const Dashboard = () => {
     }
   };
 
+  const handleLocationUpdate = (location) => {
+    setUserLocation(location);
+    console.log('Location updated:', location);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -98,6 +106,12 @@ const Dashboard = () => {
               </div>
             </div>
             <div className="flex items-center space-x-4">
+              <button
+                onClick={() => setShowMap(!showMap)}
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+              >
+                {showMap ? 'Hide Map' : 'Show Map'}
+              </button>
               <span className="text-sm text-gray-700">Welcome, {user?.name || 'User'}!</span>
               <button
                 onClick={signOut}
@@ -109,6 +123,27 @@ const Dashboard = () => {
           </div>
         </div>
       </header>
+
+      {/* Map Section */}
+      {showMap && (
+        <div className="bg-white shadow mb-6">
+          <div className="px-4 py-5 sm:p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold text-gray-900">Location Tracking</h2>
+              <button
+                onClick={() => setShowMap(false)}
+                className="text-gray-500 hover:text-gray-700 text-2xl"
+              >
+                ×
+              </button>
+            </div>
+            <MapView
+              height="500px"
+              onLocationUpdate={handleLocationUpdate}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
