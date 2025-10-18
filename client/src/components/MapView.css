@@ -1,0 +1,42 @@
+/* MapView component styles */
+.map-container {
+  width: 100%;
+  height: 100%;
+}
+
+.map-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+/* Custom marker styles */
+.user-location-marker {
+  background: transparent !important;
+  border: none !important;
+}
+
+.history-marker {
+  background: transparent !important;
+  border: none !important;
+}
+
+/* Ensure map container has proper dimensions */
+.leaflet-container {
+  height: 100%;
+  width: 100%;
+  z-index: 1;
+}
+
+/* Responsive design */
+@media (max-width: 640px) {
+  .map-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .map-controls button {
+    width: 100%;
+  }
+}
