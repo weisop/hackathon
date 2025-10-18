@@ -1,13 +1,70 @@
 import axios from 'axios';
+import { API_CONFIG } from '../config/environment.js';
 
-const API_BASE_URL = 'http://localhost:3001/api';
+// Dynamic API URL detection
+let API_BASE_URL = API_CONFIG.baseURL;
+
+// Function to detect the correct API port
+const detectApiUrl = async () => {
+  try {
+    const detectedUrl = await API_CONFIG.detectPort();
+    API_BASE_URL = `${detectedUrl}/api`;
+    console.log(`🔗 API detected at: ${API_BASE_URL}`);
+    return API_BASE_URL;
+  } catch (error) {
+    console.warn('⚠️ Could not auto-detect API port, using default:', API_BASE_URL);
+    return API_BASE_URL;
+  }
+};
+
+// Initialize API URL
+detectApiUrl();
 
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: API_CONFIG.timeout,
 });
+
+// Add request interceptor to handle dynamic URL updates
+api.interceptors.request.use(async (config) => {
+  // Update base URL if needed
+  if (config.baseURL !== API_BASE_URL) {
+    config.baseURL = API_BASE_URL;
+  }
+  return config;
+});
+
+// Add response interceptor for error handling and retry logic
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+    
+    // If it's a network error and we haven't retried yet
+    if (error.code === 'ERR_NETWORK' && !originalRequest._retry) {
+      originalRequest._retry = true;
+      
+      try {
+        // Try to detect a new API URL
+        const newApiUrl = await API_CONFIG.detectPort();
+        API_BASE_URL = `${newApiUrl}/api`;
+        api.defaults.baseURL = API_BASE_URL;
+        
+        console.log(`🔄 Retrying with new API URL: ${API_BASE_URL}`);
+        
+        // Retry the original request
+        return api(originalRequest);
+      } catch (detectionError) {
+        console.error('❌ Failed to detect API URL:', detectionError);
+      }
+    }
+    
+    return Promise.reject(error);
+  }
+);
 
 export const apiService = {
   // Get all items
