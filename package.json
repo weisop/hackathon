@@ -25,6 +25,8 @@
     "concurrently": "^8.2.2"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.75.1"
+    "@supabase/supabase-js": "^2.75.1",
+    "leaflet": "^1.9.4",
+    "react-leaflet": "^5.0.0"
   }
 }
