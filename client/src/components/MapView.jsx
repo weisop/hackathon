@@ -84,7 +84,6 @@ export default function MapView({
   const [locationHistory, setLocationHistory] = useState([]);
   const [isTracking, setIsTracking] = useState(false);
   const [error, setError] = useState(null);
-  const [precisionMode, setPrecisionMode] = useState('high');
   const [smoothedLocation, setSmoothedLocation] = useState(null);
   const [enhancedLocationData, setEnhancedLocationData] = useState(null);
   const [nearbyPlaces, setNearbyPlaces] = useState([]);
@@ -328,35 +327,6 @@ export default function MapView({
     }
   };
 
-  // Get precision options based on mode
-  const getPrecisionOptions = (mode) => {
-    switch (mode) {
-      case 'ultra':
-        return {
-          enableHighAccuracy: true,
-          timeout: 30000,
-          maximumAge: 0
-        };
-      case 'high':
-        return {
-          enableHighAccuracy: true,
-          timeout: 15000,
-          maximumAge: 10000
-        };
-      case 'balanced':
-        return {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 30000
-        };
-      default:
-        return {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 300000
-        };
-    }
-  };
 
   // Get user's current location with precision options
   const getCurrentLocation = () => {
@@ -365,7 +335,11 @@ export default function MapView({
       return;
     }
 
-    const options = getPrecisionOptions(precisionMode);
+    const options = {
+      enableHighAccuracy: true,
+      timeout: 15000,
+      maximumAge: 10000
+    };
     
     navigator.geolocation.getCurrentPosition(
       (position) => {
@@ -572,7 +546,11 @@ export default function MapView({
   // Watch position for continuous tracking with precision
   useEffect(() => {
     if (isTracking) {
-      const options = getPrecisionOptions(precisionMode);
+      const options = {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 10000
+      };
       
       watchIdRef.current = navigator.geolocation.watchPosition(
         (position) => {
@@ -638,82 +616,14 @@ export default function MapView({
         watchIdRef.current = null;
       }
     };
-  }, [isTracking, precisionMode, smoothLocation, onLocationUpdate]);
+  }, [isTracking, smoothLocation, onLocationUpdate]);
 
   return (
     <div className="map-container relative">
-      {/* Precision Controls */}
-      <div className="precision-controls mb-4 p-4 bg-gray-50 rounded-lg">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-          {/* Precision Mode */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Precision Mode</label>
-            <select
-              value={precisionMode}
-              onChange={(e) => setPrecisionMode(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="ultra">Ultra (30s timeout, no cache)</option>
-              <option value="high">High (15s timeout, 10s cache)</option>
-              <option value="balanced">Balanced (10s timeout, 30s cache)</option>
-            </select>
-          </div>
-
-
-        </div>
-
-        {/* Tracking Controls */}
-        <div className="flex flex-wrap gap-2 mb-4">
-          <button
-            onClick={toggleTracking}
-            className={`px-4 py-2 rounded text-sm font-medium ${
-              isTracking 
-                ? 'bg-red-500 hover:bg-red-600 text-white' 
-                : 'bg-blue-500 hover:bg-blue-600 text-white'
-            }`}
-          >
-            {isTracking ? 'Stop Tracking' : 'Start Precise Tracking'}
-          </button>
-          
-          <button
-            onClick={getCurrentLocation}
-            className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded text-sm font-medium"
-          >
-            Get Current Location
-          </button>
-
-          <button
-            onClick={() => {
-              setLocationHistory([]);
-              setTrackingStats({
-                totalLocations: 0,
-                averageAccuracy: 0,
-                bestAccuracy: Infinity,
-                trackingDuration: 0
-              });
-            }}
-            className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded text-sm font-medium"
-          >
-            Clear History
-          </button>
-
-          {/* Friends functionality temporarily disabled */}
-          {/* <button
-            onClick={() => setShowFriendLocations(!showFriendLocations)}
-            className={`px-4 py-2 rounded text-sm font-medium ${
-              showFriendLocations 
-                ? 'bg-green-500 hover:bg-green-600 text-white' 
-                : 'bg-gray-400 hover:bg-gray-500 text-white'
-            }`}
-          >
-            {showFriendLocations ? 'Hide Friends' : 'Show Friends'}
-          </button> */}
-        </div>
-
-        {/* Error Display */}
-        {error && (
-          <div className="text-red-500 text-sm mb-4 p-2 bg-red-50 rounded">{error}</div>
-        )}
+      {/* Error Display */}
+      {error && (
+        <div className="text-red-500 text-sm mb-4 p-2 bg-red-50 rounded">{error}</div>
+      )}
 
 
         {/* Enhanced Location Data */}
