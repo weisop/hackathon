@@ -96,7 +96,7 @@ const AIInsightsDashboard = ({ userData, locationData }) => {
       <div className="space-y-3">
         <h4 className="font-semibold text-gray-800 mb-3">Personalized Insights</h4>
         {insights.map((insight, index) => (
-          <div key={index} className="bg-gradient-to-r from-green-50 to-teal-50 rounded-lg p-4 border border-green-100">
+          <div key={`insight-${insight.insight?.slice(0, 20)}-${index}`} className="bg-gradient-to-r from-green-50 to-teal-50 rounded-lg p-4 border border-green-100">
             <div className="flex items-start">
               <div className="flex-1">
                 <div className="flex items-center mb-2">

@@ -798,7 +798,7 @@ export default function MapView({
                 <div className="text-sm font-medium text-gray-700 mb-2">Nearby Places:</div>
                 <div className="max-h-32 overflow-y-auto">
                   {nearbyPlaces.slice(0, 5).map((place, index) => (
-                    <div key={index} className="text-sm text-gray-600 py-1 border-b border-gray-100 last:border-b-0">
+                    <div key={`place-${place.place_id || place.name}-${index}`} className="text-sm text-gray-600 py-1 border-b border-gray-100 last:border-b-0">
                       <div className="font-medium">{place.name}</div>
                       <div className="text-xs text-gray-500">{place.vicinity}</div>
                       {place.rating && <div className="text-xs text-yellow-600">⭐ {place.rating}</div>}
@@ -970,7 +970,7 @@ export default function MapView({
           {/* Location history trail */}
           {locationHistory.map((location, index) => (
             <Marker
-              key={index}
+              key={`history-${location.timestamp || index}-${location.latitude}-${location.longitude}`}
               position={[location.latitude, location.longitude]}
               icon={L.divIcon({
                 className: 'history-marker',

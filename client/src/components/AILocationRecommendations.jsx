@@ -60,7 +60,7 @@ const AILocationRecommendations = ({ userHistory, currentLocation }) => {
 
       <div className="space-y-3">
         {recommendations.map((rec, index) => (
-          <div key={index} className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4 border border-purple-100">
+          <div key={`rec-${rec.name}-${index}`} className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4 border border-purple-100">
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <h4 className="font-semibold text-gray-800 mb-1">{rec.name}</h4>
