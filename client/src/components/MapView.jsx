@@ -460,6 +460,13 @@ export default function MapView({
 
   // Save location to backend
   const saveLocationToBackend = useCallback(async (location) => {
+    // Check if user is authenticated before attempting to save
+    const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
+    if (!token) {
+      console.log('🔐 No authentication token found, skipping location save');
+      return;
+    }
+
     try {
       await apiService.trackLocation({
         latitude: location.latitude,
@@ -469,7 +476,25 @@ export default function MapView({
       });
       console.log('💾 Location saved to backend');
     } catch (error) {
-      console.warn('⚠️ Location tracking not available (authentication required):', error.message);
+      console.error('Error saving location:', {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+        location: {
+          latitude: location.latitude,
+          longitude: location.longitude,
+          accuracy: location.accuracy
+        }
+      });
+      
+      // Check if it's an authentication error
+      if (error.response?.status === 401) {
+        console.warn('⚠️ Location tracking requires authentication. Please log in.');
+      } else if (error.response?.status === 404) {
+        console.warn('⚠️ Location tracking endpoint not found. Server may not be running.');
+      } else {
+        console.warn('⚠️ Location tracking failed:', error.message);
+      }
     }
   }, [enhancedLocationData]);
 
