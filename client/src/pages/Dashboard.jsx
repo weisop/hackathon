@@ -6,6 +6,7 @@ import FriendsList from '../components/FriendsList';
 // Friends functionality temporarily disabled
 // import FriendsDebugger from '../components/FriendsDebugger';
 import DatabaseDebugger from '../components/DatabaseDebugger';
+import ApiDebugger from '../components/ApiDebugger';
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
@@ -178,6 +179,8 @@ const Dashboard = () => {
         </div>
       )}
 
+      {/* API Debugger */}
+      <ApiDebugger />
     </div>
   );
 };

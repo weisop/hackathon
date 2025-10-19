@@ -482,6 +482,10 @@ export default function MapView({
   useEffect(() => {
     const recoverActiveSessions = async () => {
       try {
+        // Check authentication first
+        const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
+        console.log('🔐 Auth token available:', !!token);
+        
         const activeSessions = await apiService.getActiveLocationSessions();
         if (activeSessions && activeSessions.length > 0) {
           const session = activeSessions[0]; // Get the most recent active session
@@ -504,9 +508,16 @@ export default function MapView({
             
             console.log('🔄 Recovered active session:', session);
           }
+        } else {
+          console.log('📝 No active sessions found');
         }
       } catch (error) {
         console.warn('⚠️ Failed to recover active sessions:', error);
+        console.log('🔍 Error details:', {
+          message: error.message,
+          status: error.response?.status,
+          data: error.response?.data
+        });
       }
     };
 
