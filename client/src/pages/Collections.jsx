@@ -12,7 +12,8 @@ const Collections = () => {
       try {
         setLoading(true);
         const data = await apiService.getLocationAchievements();
-        setAchievements(data);
+        console.log('📊 Fetched achievements:', data);
+        setAchievements(data || []);
       } catch (error) {
         console.error('Error fetching achievements:', error);
         // Set some demo data if API fails
@@ -20,16 +21,16 @@ const Collections = () => {
           {
             id: '1',
             location_name: 'HUB',
-            target_hours: 4,
-            achieved_hours: 4.5,
+            target_hours: 0.167,
+            achieved_hours: 0.167,
             achievement_date: new Date().toISOString(),
             is_milestone: true
           },
           {
             id: '2',
             location_name: 'Library',
-            target_hours: 2,
-            achieved_hours: 2.2,
+            target_hours: 0.167,
+            achieved_hours: 0.167,
             achievement_date: new Date(Date.now() - 86400000).toISOString(),
             is_milestone: false
           }
@@ -50,6 +51,29 @@ const Collections = () => {
     });
   };
 
+  const formatTime = (hours) => {
+    if (hours < 1) {
+      const minutes = Math.floor(hours * 60);
+      return `${minutes}m`;
+    } else {
+      const wholeHours = Math.floor(hours);
+      const minutes = Math.floor((hours - wholeHours) * 60);
+      return minutes > 0 ? `${wholeHours}h ${minutes}m` : `${wholeHours}h`;
+    }
+  };
+
+  const refreshAchievements = async () => {
+    try {
+      setLoading(true);
+      const data = await apiService.getLocationAchievements();
+      setAchievements(data || []);
+    } catch (error) {
+      console.error('Error refreshing achievements:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getAchievementIcon = (locationName) => {
     const icons = {
       'HUB': '🏢',
@@ -68,12 +92,21 @@ const Collections = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <h1 className="text-3xl font-bold text-gray-900">Collections</h1>
-            <button
-              onClick={signOut}
-              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium"
-            >
-              Sign Out
-            </button>
+            <div className="flex space-x-3">
+              <button
+                onClick={refreshAchievements}
+                disabled={loading}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium disabled:opacity-50"
+              >
+                {loading ? 'Refreshing...' : '🔄 Refresh'}
+              </button>
+              <button
+                onClick={signOut}
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+              >
+                Sign Out
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -122,11 +155,11 @@ const Collections = () => {
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm">
                           <span className="text-gray-600">Target:</span>
-                          <span className="font-medium">{achievement.target_hours}h</span>
+                          <span className="font-medium">{formatTime(achievement.target_hours)}</span>
                         </div>
                         <div className="flex justify-between text-sm">
                           <span className="text-gray-600">Achieved:</span>
-                          <span className="font-medium text-primary-600">{achievement.achieved_hours}h</span>
+                          <span className="font-medium text-primary-600">{formatTime(achievement.achieved_hours)}</span>
                         </div>
                         <div className="flex justify-between text-sm">
                           <span className="text-gray-600">Date:</span>

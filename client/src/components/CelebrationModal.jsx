@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { apiService } from '../services/api';
 
 export default function CelebrationModal({ isOpen, onClose, locationName, achievementData }) {
+  const navigate = useNavigate();
   const [showConfetti, setShowConfetti] = useState(false);
   const [animationStep, setAnimationStep] = useState(0);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -13,8 +17,39 @@ export default function CelebrationModal({ isOpen, onClose, locationName, achiev
       setTimeout(() => setAnimationStep(1), 100);
       setTimeout(() => setAnimationStep(2), 300);
       setTimeout(() => setAnimationStep(3), 500);
+      
+      // Save achievement to database
+      saveAchievement();
     }
   }, [isOpen]);
+
+  const saveAchievement = async () => {
+    if (!achievementData) return;
+    
+    try {
+      setIsSaving(true);
+      
+      // Create achievement record
+      const achievementRecord = {
+        location_id: achievementData.locationName.toLowerCase().replace(/\s+/g, '-'),
+        location_name: achievementData.locationName,
+        target_hours: achievementData.targetHours,
+        achieved_hours: achievementData.achievedHours,
+        achievement_date: new Date().toISOString(),
+        is_milestone: true
+      };
+
+      // Save to database via API
+      await apiService.createLocationAchievement(achievementRecord);
+      
+      console.log('✅ Achievement saved to collections!');
+    } catch (error) {
+      console.error('❌ Failed to save achievement:', error);
+      // Still show celebration even if save fails
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -116,7 +151,10 @@ export default function CelebrationModal({ isOpen, onClose, locationName, achiev
               Continue
             </button>
             <button
-              onClick={handleClose}
+              onClick={() => {
+                handleClose();
+                navigate('/collections');
+              }}
               className="flex-1 bg-gradient-to-r from-yellow-400 to-red-500 hover:from-yellow-500 hover:to-red-600 text-white px-4 py-2 rounded-lg font-medium transition-all transform hover:scale-105"
             >
               View Collections

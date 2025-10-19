@@ -419,16 +419,27 @@ export const apiService = {
     }
   },
 
-  // Get location achievements
-  getLocationAchievements: async () => {
-    try {
-      const response = await api.get('/location-sessions/achievements');
-      return response.data;
-    } catch (error) {
-      console.error('Error getting achievements:', error);
-      throw error;
-    }
-  },
+    // Get location achievements
+    getLocationAchievements: async () => {
+      try {
+        const response = await api.get('/location-sessions/achievements');
+        return response.data;
+      } catch (error) {
+        console.error('Error getting achievements:', error);
+        throw error;
+      }
+    },
+
+    // Create location achievement
+    createLocationAchievement: async (achievementData) => {
+      try {
+        const response = await api.post('/location-sessions/achievements', achievementData);
+        return response.data;
+      } catch (error) {
+        console.error('Error creating achievement:', error);
+        throw error;
+      }
+    },
 };
 
 export default apiService;

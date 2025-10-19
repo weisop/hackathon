@@ -837,6 +837,37 @@ app.get('/api/location-sessions/achievements', requireAuth, async (req, res) => 
   }
 });
 
+// Create location achievement
+app.post('/api/location-sessions/achievements', requireAuth, async (req, res) => {
+  try {
+    const { location_id, location_name, target_hours, achieved_hours, achievement_date, is_milestone } = req.body;
+    
+    if (!location_id || !location_name || !target_hours || !achieved_hours) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    const { data: achievement, error } = await supabase
+      .from('location_achievements')
+      .insert({
+        user_id: req.user.id,
+        location_id,
+        location_name,
+        target_hours: parseFloat(target_hours),
+        achieved_hours: parseFloat(achieved_hours),
+        achievement_date: achievement_date || new Date().toISOString(),
+        is_milestone: is_milestone || false
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    res.json({ message: 'Achievement created', achievement });
+  } catch (error) {
+    console.error('Error creating achievement:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
