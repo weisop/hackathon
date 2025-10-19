@@ -2,11 +2,12 @@ const { createClient } = require('@supabase/supabase-js');
 const jwt = require('jsonwebtoken');
 
 // Initialize Supabase client
-const supabaseUrl = process.env.SUPABASE_URL || 'https://your-project-id.supabase.co';
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // You'll need to add this to your .env
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || 'your-supabase-anon-key';
+const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || 'https://your-project-id.supabase.co';
+const supabaseServiceKey = process.env.VITE_SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || 'your-supabase-anon-key';
 
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Use service role key for server operations to bypass RLS
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 // Middleware to verify JWT token from Supabase
 const requireAuth = async (req, res, next) => {
