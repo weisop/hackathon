@@ -1,16 +1,18 @@
 @import 'leaflet/dist/leaflet.css';
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=MedievalSharp&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
+  font-family: 'Cinzel', Georgia, serif;
+  line-height: 1.6;
   font-weight: 400;
 
-  color-scheme: light;
-  color: #213547;
-  background-color: #ffffff;
+  color-scheme: dark;
+  color: #eee2bc;
+  background-color: #1c1917;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -20,56 +22,66 @@
 
 a {
   font-weight: 500;
-  color: #374151;
+  color: #c084fca5;
   text-decoration: inherit;
+  transition: all 0.3s ease;
 }
 a:hover {
-  color: #111827;
+  color: #e9d5ff;
+  text-shadow: 0 0 10px rgba(168, 85, 247, 0.5);
 }
 
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background-color: #f9fafb;
+  background: linear-gradient(135deg, #1c1917 0%, #292524 50%, #44403c 100%);
+  background-attachment: fixed;
 }
 
 h1 {
   font-size: 3.2em;
   line-height: 1.1;
-  color: #111827;
+  color: #c084fc;
+  font-family: 'MedievalSharp', cursive;
+  text-shadow: 0 0 20px rgba(168, 85, 247, 0.6), 2px 2px 4px rgba(0, 0, 0, 0.5);
+  letter-spacing: 0.05em;
+}
+
+h2, h3, h4, h5, h6 {
+  font-family: 'Cinzel', serif;
+  color: #efe4c2;
+  letter-spacing: 0.03em;
 }
 
 button {
   border-radius: 8px;
-  border: 1px solid transparent;
+  border: 2px solid #581c87;
   padding: 0.6em 1.2em;
   font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #f9f9f9;
-  color: #374151;
+  font-weight: 600;
+  font-family: 'Cinzel', serif;
+  background: linear-gradient(135deg, #704a94 0%, #704a94 100%);
+  color: #efe4c2;
   cursor: pointer;
-  transition: border-color 0.25s;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 button:hover {
-  border-color: #6b7280;
-  background-color: #f3f4f6;
+  border-color: #c084fc;
+  background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%);
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.6);
+  transform: translateY(-2px);
 }
 button:focus,
 button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+  outline: 3px solid #a855f7;
+  outline-offset: 2px;
 }
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #111827;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
 }

@@ -27,6 +27,10 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.75.1",
+<<<<<<< HEAD
+    "leaflet": "^1.9.4",
+=======
+>>>>>>> refs/remotes/origin/main
     "react-leaflet": "^5.0.0"
   }
 }
