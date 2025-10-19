@@ -77,14 +77,6 @@ const LocationLevelProgress = ({
     }
   }, [elapsedTime, isVisible, locationId]);
 
-  // Reset level if user has been at location for less than 1 minute
-  useEffect(() => {
-    if (shouldResetLevel && userLevel && userLevel.current_level > 1) {
-      console.log('🔄 Resetting level from', userLevel.current_level, 'to 1 due to short time');
-      resetUserLevel();
-    }
-  }, [shouldResetLevel, userLevel]);
-
   const resetUserLevel = async () => {
     try {
       // Reset the user level to 1 in the database
@@ -137,15 +129,23 @@ const LocationLevelProgress = ({
 
   // Reset to level 1 if elapsed time is very short (less than 1 minute)
   const elapsedMinutes = elapsedTime / (1000 * 60);
-  const shouldResetLevel = elapsedMinutes < 1 && userLevel.current_level > 1;
+  const shouldResetLevel = elapsedMinutes < 1 && userLevel && userLevel.current_level > 1;
   
-  const currentLevel = shouldResetLevel ? 1 : userLevel.current_level;
+  const currentLevel = shouldResetLevel ? 1 : (userLevel ? userLevel.current_level : 1);
   const requiredTime = calculateLevelTime(currentLevel);
   const elapsedHours = elapsedTime / (1000 * 60 * 60);
   const progressPercentage = Math.min((elapsedHours / requiredTime) * 100, 100);
   
   // Check if level is truly complete (100% progress)
   const isLevelFullyComplete = progressPercentage >= 100;
+
+  // Reset level if user has been at location for less than 1 minute
+  useEffect(() => {
+    if (shouldResetLevel && userLevel && userLevel.current_level > 1) {
+      console.log('🔄 Resetting level from', userLevel.current_level, 'to 1 due to short time');
+      resetUserLevel();
+    }
+  }, [shouldResetLevel, userLevel]);
 
   const formatTime = (hours) => {
     if (hours < 1) {
