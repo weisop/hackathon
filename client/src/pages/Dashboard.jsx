@@ -5,8 +5,6 @@ import MapView from '../components/MapView';
 import FriendsList from '../components/FriendsList';
 // Friends functionality temporarily disabled
 // import FriendsDebugger from '../components/FriendsDebugger';
-import DatabaseDebugger from '../components/DatabaseDebugger';
-import ApiDebugger from '../components/ApiDebugger';
 import AILocationRecommendations from '../components/AILocationRecommendations';
 import AILocationDescription from '../components/AILocationDescription';
 import AIInsightsDashboard from '../components/AIInsightsDashboard';
@@ -18,7 +16,6 @@ const Dashboard = () => {
   const [showFriends, setShowFriends] = useState(false);
   // Friends functionality temporarily disabled
   // const [showDebugger, setShowDebugger] = useState(false);
-  const [showDatabaseDebugger, setShowDatabaseDebugger] = useState(false);
   
   // AI Features State
   const [currentLocation, setCurrentLocation] = useState('HUB');
@@ -116,12 +113,6 @@ const Dashboard = () => {
               >
                 {showDebugger ? 'Hide Debugger' : '🔧 Debug Friends'}
               </button> */}
-              <button
-                onClick={() => setShowDatabaseDebugger(!showDatabaseDebugger)}
-                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium"
-              >
-                {showDatabaseDebugger ? 'Hide DB Debug' : '🗄️ Debug Database'}
-              </button>
               <span className="text-sm text-gray-700">Welcome, {user?.firstName || user?.name || 'User'}!</span>
             </div>
           </div>
@@ -221,28 +212,7 @@ const Dashboard = () => {
         </div>
       )} */}
 
-      {/* Database Debugger Modal */}
-      {showDatabaseDebugger && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg max-w-6xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center p-6 border-b">
-              <h2 className="text-xl font-semibold text-gray-900">🗄️ Database Debugger</h2>
-              <button
-                onClick={() => setShowDatabaseDebugger(false)}
-                className="text-gray-500 hover:text-gray-700 text-2xl"
-              >
-                ×
-              </button>
-            </div>
-            <div className="p-6">
-              <DatabaseDebugger />
-            </div>
-          </div>
-        </div>
-      )}
 
-      {/* API Debugger */}
-      <ApiDebugger />
     </div>
   );
 };
