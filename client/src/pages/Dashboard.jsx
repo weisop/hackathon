@@ -8,7 +8,6 @@ import FriendsList from '../components/FriendsList';
 import AILocationRecommendations from '../components/AILocationRecommendations';
 import AILocationDescription from '../components/AILocationDescription';
 import AIInsightsDashboard from '../components/AIInsightsDashboard';
-import SmartNotifications from '../components/SmartNotifications';
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
@@ -121,17 +120,17 @@ const Dashboard = () => {
 
       {/* Map Section */}
       <div className="bg-[#f2ede1] shadow mb-6">
-        <div className="px-4 py-5 sm:p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold text-gray-900">Location Tracking</h2>
+          <div className="px-4 py-5 sm:p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold text-gray-900">Location Tracking</h2>
+            </div>
+            <MapView
+              height="500px"
+              onLocationUpdate={handleLocationUpdate}
+              markers={allDemoMarkers}
+            />
           </div>
-          <MapView
-            height="500px"
-            onLocationUpdate={handleLocationUpdate}
-            markers={allDemoMarkers}
-          />
         </div>
-      </div>
 
       {/* AI Features Section */}
       <div className="bg-white shadow mb-6">
@@ -161,12 +160,6 @@ const Dashboard = () => {
               locationData={locationData}
             />
 
-            {/* Smart Notifications */}
-            <SmartNotifications 
-              currentLocation={currentLocation}
-              userLevel={userLevel}
-              isVisible={true}
-            />
           </div>
         </div>
       </div>
@@ -198,18 +191,18 @@ const Dashboard = () => {
           <div className="bg-white rounded-lg max-w-6xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center p-6 border-b">
               <h2 className="text-xl font-semibold text-gray-900">🔧 Friends System Debugger</h2>
-              <button
+                  <button
                 onClick={() => setShowDebugger(false)}
                 className="text-gray-500 hover:text-gray-700 text-2xl"
-              >
+                  >
                 ×
-              </button>
-            </div>
+                  </button>
+                </div>
             <div className="p-6">
               <FriendsDebugger />
+              </div>
             </div>
           </div>
-        </div>
       )} */}
 
 

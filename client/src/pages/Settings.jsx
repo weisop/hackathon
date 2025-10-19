@@ -27,7 +27,11 @@ const Settings = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-cover bg-center bg-no-repeat"
+        style={{
+        backgroundImage: "linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('/bg.jpg')"
+      }}
+    >
       <header className="bg-[#f2ede1] shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
@@ -45,9 +49,9 @@ const Settings = () => {
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0 space-y-6">
           {/* Profile Section */}
-          <div className="bg-white shadow rounded-lg">
+          <div className="bg-[#37006b] shadow rounded-lg">
             <div className="px-4 py-5 sm:p-6">
-              <h2 className="text-lg font-medium text-gray-900 mb-6">Profile</h2>
+              <h2 className="text-lg font-medium text-[#f2ede1] mb-6">Profile</h2>
               
               <div className="flex items-center space-x-6">
                 <div className="relative">
@@ -106,15 +110,15 @@ const Settings = () => {
           </div>
 
           {/* Preferences Section */}
-          <div className="bg-white shadow rounded-lg">
+          <div className="bg-[#37006b] shadow rounded-lg">
             <div className="px-4 py-5 sm:p-6">
-              <h2 className="text-lg font-medium text-gray-900 mb-6">Preferences</h2>
+              <h2 className="text-lg font-medium text-[#f2ede1] mb-6">Preferences</h2>
               
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-sm font-medium text-gray-900">Email Notifications</h3>
-                    <p className="text-sm text-gray-500">Receive email updates about your account</p>
+                    <h3 className="text-sm font-medium text-[#f2ede1]">Email Notifications</h3>
+                    <p className="text-sm text-gray-300">Receive email updates about your account</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -128,7 +132,7 @@ const Settings = () => {
                 </div>
 
                 <div>
-                  <label htmlFor="theme" className="block text-sm font-medium text-gray-900">
+                    <label htmlFor="theme" className="block text-sm font-medium text-[#f2ede1]">
                     Theme
                   </label>
                   <select

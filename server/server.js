@@ -564,7 +564,7 @@ app.post('/api/location/track', requireAuth, async (req, res) => {
     if (error) {
       // If table doesn't exist or other database error, return success but with warning
       if (error.code === 'PGRST116' || (error.message && error.message.includes('relation "location_tracks" does not exist'))) {
-        console.warn('⚠️ location_tracks table does not exist, location tracking disabled');
+        // Silently handle missing table
         return res.json({ 
           message: 'Location received (tracking disabled)', 
           warning: 'location_tracks table not found - please apply the database schema to enable location tracking' 
@@ -575,12 +575,296 @@ app.post('/api/location/track', requireAuth, async (req, res) => {
     
     res.json({ message: 'Location saved', location: data });
   } catch (error) {
-    // Log as warning instead of error since we're handling it gracefully
-    console.warn('⚠️ Location tracking issue (handled gracefully):', error.message);
+    // Silently handle location tracking errors
     // Return success with warning instead of 500 error
     res.json({ 
       message: 'Location received (tracking may be disabled)', 
       warning: 'Location tracking encountered an error: ' + error.message 
+    });
+  }
+});
+
+// AI Insights endpoint
+app.post('/api/ai/insights', requireAuth, async (req, res) => {
+  try {
+    const { userData, locationData } = req.body;
+    
+    // Use the Gemini API key from server environment
+    const apiKey = process.env.GOOGLE_GEMINI_API_KEY;
+    
+    if (!apiKey) {
+      return res.json({
+        success: false,
+        message: 'AI service not configured',
+        fallback: [
+          {
+            insight: 'You\'re building great exploration habits!',
+            recommendation: 'Try visiting a new location each week to expand your campus knowledge.'
+          },
+          {
+            insight: 'Consistency is key to campus mastery',
+            recommendation: 'Set a goal to spend at least 30 minutes in each location you visit.'
+          }
+        ]
+      });
+    }
+
+    const prompt = `Analyze this user's campus exploration data and provide 2-3 personalized insights:
+
+User Data:
+- Total time spent: ${Math.round((userData.totalTime || 0) / 60)} minutes
+- Favorite location: ${userData.favoriteLocation || 'Not determined'}
+- Visit patterns: ${userData.visitPatterns || 'No clear pattern'}
+
+Location Data:
+- Most visited: ${locationData.mostVisited || 'Unknown'}
+- Peak hours: ${locationData.peakHours || 'Unknown'}
+
+Provide insights that are:
+- Personal and actionable
+- Based on their actual behavior
+- Encouraging and motivating
+- Include specific recommendations
+- Format as JSON array with {insight, recommendation}
+
+Example: [{"insight": "You're most productive in the morning", "recommendation": "Try visiting the Library between 9-11 AM for optimal focus!"}]`;
+
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{
+            text: prompt
+          }]
+        }]
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Gemini API request failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const aiResponse = data.candidates[0].content.parts[0].text;
+    
+    // Try to parse JSON from response
+    try {
+      const jsonMatch = aiResponse.match(/\[.*\]/s);
+      if (jsonMatch) {
+        const insights = JSON.parse(jsonMatch[0]);
+        return res.json({ success: true, insights });
+      }
+    } catch (parseError) {
+      console.warn('Failed to parse AI insights JSON:', parseError);
+    }
+
+    // Fallback if parsing fails
+    return res.json({
+      success: true,
+      insights: [
+        {
+          insight: 'You\'re building great exploration habits!',
+          recommendation: 'Try visiting a new location each week to expand your campus knowledge.'
+        },
+        {
+          insight: 'Consistency is key to campus mastery',
+          recommendation: 'Set a goal to spend at least 30 minutes in each location you visit.'
+        }
+      ]
+    });
+
+  } catch (error) {
+    console.error('AI insights error:', error);
+    res.json({
+      success: false,
+      message: 'AI service temporarily unavailable',
+      fallback: [
+        {
+          insight: 'You\'re building great exploration habits!',
+          recommendation: 'Try visiting a new location each week to expand your campus knowledge.'
+        }
+      ]
+    });
+  }
+});
+
+// AI Recommendations endpoint
+app.post('/api/ai/recommendations', requireAuth, async (req, res) => {
+  try {
+    const { userHistory, currentLocation } = req.body;
+    
+    const apiKey = process.env.GOOGLE_GEMINI_API_KEY;
+    
+    if (!apiKey) {
+      return res.json({
+        success: false,
+        message: 'AI service not configured',
+        fallback: [
+          {
+            name: 'Library',
+            reason: 'Perfect for focused study sessions',
+            tip: 'The top floor has the quietest study areas!'
+          },
+          {
+            name: 'Student Center',
+            reason: 'Great for socializing and group work',
+            tip: 'Check out the game room on the second floor!'
+          }
+        ]
+      });
+    }
+
+    const visitedLocations = userHistory.map(h => h.locationName).join(', ');
+    const totalTime = userHistory.reduce((sum, h) => sum + h.timeSpent, 0);
+    
+    const prompt = `Based on this user's location history, suggest 2-3 new locations they might enjoy exploring:
+
+User History:
+- Visited: ${visitedLocations || 'No previous visits'}
+- Total time spent: ${Math.round(totalTime / 60)} minutes
+- Current location: ${currentLocation}
+
+Available campus locations: HUB, Library, Engineering Building, Student Center, Gym, Cafeteria, Art Building, Science Hall
+
+Suggestions should be:
+- Personalized based on their patterns
+- Include brief reasoning
+- Be encouraging and fun
+- Format as JSON array with {name, reason, tip}
+
+Example: [{"name": "Library", "reason": "You seem to enjoy quiet study spaces", "tip": "The 3rd floor has the best natural lighting!"}]`;
+
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{
+            text: prompt
+          }]
+        }]
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Gemini API request failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const aiResponse = data.candidates[0].content.parts[0].text;
+    
+    // Try to parse JSON from response
+    try {
+      const jsonMatch = aiResponse.match(/\[.*\]/s);
+      if (jsonMatch) {
+        const recommendations = JSON.parse(jsonMatch[0]);
+        return res.json({ success: true, recommendations });
+      }
+    } catch (parseError) {
+      console.warn('Failed to parse AI recommendations JSON:', parseError);
+    }
+
+    // Fallback if parsing fails
+    return res.json({
+      success: true,
+      recommendations: [
+        {
+          name: 'Library',
+          reason: 'Perfect for focused study sessions',
+          tip: 'The top floor has the quietest study areas!'
+        },
+        {
+          name: 'Student Center',
+          reason: 'Great for socializing and group work',
+          tip: 'Check out the game room on the second floor!'
+        }
+      ]
+    });
+
+  } catch (error) {
+    console.error('AI recommendations error:', error);
+    res.json({
+      success: false,
+      message: 'AI service temporarily unavailable',
+      fallback: [
+        {
+          name: 'Library',
+          reason: 'Perfect for focused study sessions',
+          tip: 'The top floor has the quietest study areas!'
+        }
+      ]
+    });
+  }
+});
+
+// AI Description endpoint
+app.post('/api/ai/description', requireAuth, async (req, res) => {
+  try {
+    const { locationName, context } = req.body;
+    
+    const apiKey = process.env.GOOGLE_GEMINI_API_KEY;
+    
+    if (!apiKey) {
+      return res.json({
+        success: false,
+        message: 'AI service not configured',
+        fallback: `${locationName} is a great place to explore and discover new opportunities!`
+      });
+    }
+
+    const { timeOfDay, weather, userLevel, isBusy } = context;
+    
+    const prompt = `Generate a dynamic, engaging description for the location "${locationName}" on a university campus. 
+    
+Context:
+- Time: ${timeOfDay || 'unknown'}
+- Weather: ${weather || 'unknown'}
+- User Level: ${userLevel || 1}
+- Busy Status: ${isBusy ? 'busy' : 'quiet'}
+
+Make it:
+- 1-2 sentences maximum
+- Engaging and informative
+- Context-aware (mention time/weather if relevant)
+- Include a fun fact or tip about the location
+- Tone: friendly, helpful, slightly playful
+
+Example format: "The HUB is bustling with students grabbing lunch and socializing. Pro tip: The second floor has the quietest study nooks!"`;
+
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{
+            text: prompt
+          }]
+        }]
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Gemini API request failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const description = data.candidates[0].content.parts[0].text;
+    
+    return res.json({ success: true, description });
+
+  } catch (error) {
+    console.error('AI description error:', error);
+    res.json({
+      success: false,
+      message: 'AI service temporarily unavailable',
+      fallback: `${req.body.locationName} is a great place to explore and discover new opportunities!`
     });
   }
 });

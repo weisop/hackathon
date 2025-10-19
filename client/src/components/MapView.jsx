@@ -98,7 +98,7 @@ const getMarkerIcon = (type, size = 28) => {
   return L.divIcon({ html, className: 'custom-emoji-icon', iconSize: [size, size], iconAnchor: [size / 2, size / 2] });
 };
 
-export default function MapView({
+export default function MapView({ 
   center = [47.6567, -122.3066], // Default to Seattle
   zoom = 13,
   height = "400px",
@@ -143,15 +143,15 @@ export default function MapView({
   // Location smoothing algorithm (moving average)
   const smoothLocation = useCallback((newLocation, buffer) => {
     const updatedBuffer = [...buffer, newLocation].slice(-5); // Keep last 5 locations
-
+    
     if (updatedBuffer.length < 2) {
       return newLocation;
     }
-
+    
     const avgLat = updatedBuffer.reduce((sum, loc) => sum + loc.latitude, 0) / updatedBuffer.length;
     const avgLng = updatedBuffer.reduce((sum, loc) => sum + loc.longitude, 0) / updatedBuffer.length;
     const avgAccuracy = updatedBuffer.reduce((sum, loc) => sum + loc.accuracy, 0) / updatedBuffer.length;
-
+    
     return {
       latitude: avgLat,
       longitude: avgLng,
@@ -170,7 +170,7 @@ export default function MapView({
     const Δλ = (lon2 - lon1) * Math.PI / 180;
 
     const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-      Math.cos(φ1) * Math.cos(φ2) *
+              Math.cos(φ1) * Math.cos(φ2) *
       Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
@@ -193,8 +193,7 @@ export default function MapView({
       setSessionId(response.session.id);
       console.log('✅ Location session started:', response.session);
     } catch (error) {
-      console.warn('⚠️ Location session not available (continuing with local tracking):', error.message);
-      // Continue with local tracking even if database fails
+      // Silently handle session start errors - continue with local tracking
     }
   }, []);
 
@@ -206,7 +205,7 @@ export default function MapView({
       await apiService.endLocationSession(sessionId);
       console.log('✅ Location session ended');
     } catch (error) {
-      console.warn('⚠️ Could not end location session:', error.message);
+      // Silently handle session end errors
     } finally {
       setActiveSession(null);
       setSessionId(null);
@@ -225,7 +224,7 @@ export default function MapView({
         accuracy
       });
     } catch (error) {
-      console.error('❌ Failed to add session checkpoint:', error);
+      // Silently handle checkpoint errors
     }
   }, [sessionId]);
 
@@ -376,7 +375,7 @@ export default function MapView({
           heading: position.coords.heading,
           speed: position.coords.speed
         };
-
+        
         setUserLocation(location);
         setError(null);
 
@@ -396,7 +395,7 @@ export default function MapView({
   // Get enhanced location data
   const getEnhancedLocationData = useCallback(async (latitude, longitude) => {
     if (!googleMapsConfigured) return;
-
+    
     setIsLoadingEnhanced(true);
     try {
       const enhancedData = await apiService.getEnhancedLocation(latitude, longitude);
@@ -406,7 +405,7 @@ export default function MapView({
         console.log('🌟 Enhanced location data loaded:', enhancedData);
       }
     } catch (error) {
-      console.warn('⚠️ Enhanced location data not available:', error.message);
+      // Silently handle enhanced location data errors
     } finally {
       setIsLoadingEnhanced(false);
     }
@@ -439,7 +438,7 @@ export default function MapView({
     // Check if user is authenticated before attempting to save
     const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
     if (!token) {
-      console.log('🔐 No authentication token found, skipping location save');
+      // Silently skip location save if no token
       return;
     }
 
@@ -452,17 +451,8 @@ export default function MapView({
       });
       console.log('💾 Location saved to backend');
     } catch (error) {
-      // Check if it's an authentication error
-      if (error.response?.status === 401) {
-        console.warn('⚠️ Location tracking requires authentication. Please log in.');
-      } else if (error.response?.status === 404) {
-        console.warn('⚠️ Location tracking endpoint not found. Server may not be running.');
-      } else if (error.response?.data?.warning) {
-        // This is a warning from the server (e.g., table doesn't exist)
-        console.log('ℹ️ Location tracking:', error.response.data.warning);
-      } else {
-        console.warn('⚠️ Location tracking failed:', error.message);
-      }
+      // Silently handle location tracking errors
+      // Location tracking is optional and errors are handled gracefully
     }
   }, [enhancedLocationData]);
 
@@ -500,17 +490,12 @@ export default function MapView({
             setElapsedTime(elapsed);
 
             console.log('🔄 Recovered active session:', session);
-          }
-        } else {
+      }
+    } else {
           console.log('📝 No active sessions found');
         }
       } catch (error) {
-        console.warn('⚠️ Failed to recover active sessions:', error);
-        console.log('🔍 Error details:', {
-          message: error.message,
-          status: error.response?.status,
-          data: error.response?.data
-        });
+        // Silently handle session recovery errors
       }
     };
 
@@ -571,11 +556,11 @@ export default function MapView({
             heading: position.coords.heading,
             speed: position.coords.speed
           };
-
+          
           // Apply smoothing if enabled
           const smoothed = smoothLocation(location, locationBufferRef.current);
           locationBufferRef.current = [...locationBufferRef.current, location].slice(-5);
-
+          
           setUserLocation(smoothed);
           setSmoothedLocation(smoothed);
 
@@ -586,7 +571,7 @@ export default function MapView({
           if (sessionId && nearbyBuilding) {
             addSessionCheckpoint(smoothed.latitude, smoothed.longitude, smoothed.accuracy);
           }
-
+          
           // Add to history with distance calculation
           setLocationHistory(prev => {
             const newHistory = [...prev];
@@ -602,7 +587,7 @@ export default function MapView({
           });
           
           onLocationUpdate?.(smoothed);
-
+          
           // Get enhanced location data if API is configured
           if (googleMapsConfigured) {
             getEnhancedLocationData(location.latitude, location.longitude);
@@ -623,7 +608,7 @@ export default function MapView({
     
     // Set up interval to track every 30 seconds
     const intervalId = setInterval(trackLocation, 30000);
-    
+
     return () => {
       clearInterval(intervalId);
     };
@@ -631,18 +616,18 @@ export default function MapView({
 
   return (
     <div className="map-container relative">
-      {/* Error Display */}
-      {error && (
-        <div className="text-red-500 text-sm mb-4 p-2 bg-red-50 rounded">{error}</div>
-      )}
+        {/* Error Display */}
+        {error && (
+          <div className="text-red-500 text-sm mb-4 p-2 bg-red-50 rounded">{error}</div>
+        )}
 
-      {/* Enhanced Location Data */}
-      {enhancedLocationData && (
-        <div className="bg-white p-4 rounded border mb-4">
-          <h4 className="font-semibold text-gray-800 mb-3 flex items-center">
-            🌟 Enhanced Location Data
-            {isLoadingEnhanced && <span className="ml-2 text-blue-500">Loading...</span>}
-          </h4>
+        {/* Enhanced Location Data */}
+        {enhancedLocationData && (
+          <div className="bg-white p-4 rounded border mb-4">
+            <h4 className="font-semibold text-gray-800 mb-3 flex items-center">
+              🌟 Enhanced Location Data
+              {isLoadingEnhanced && <span className="ml-2 text-blue-500">Loading...</span>}
+            </h4>
             
             {enhancedLocationData.address && (
               <div className="mb-3">
@@ -697,11 +682,11 @@ export default function MapView({
           <Marker position={[47.6594, -122.3051]} icon={aliciaIcon}  zIndexOffset={1000}>
             <Popup><strong>Alicia</strong><br />📍 HUB, UW Seattle</Popup>
           </Marker>
-
+          
           {/* User's current location marker */}
           {showUserLocation && userLocation && (
             <>
-              <Marker
+              <Marker 
                 position={[userLocation.latitude, userLocation.longitude]}
                 icon={L.divIcon({
                   className: 'user-location-marker',
@@ -731,7 +716,7 @@ export default function MapView({
                   </div>
                 </Popup>
               </Marker>
-
+              
 
               {/* "You are here" button when near a building */}
               {showYouAreHereButton && nearbyBuilding && (
