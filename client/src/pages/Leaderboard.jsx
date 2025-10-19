@@ -27,22 +27,61 @@ const Leaderboard = () => {
   };
 
   const generateMockLeaderboardData = () => {
-    const names = [
-      'Alex Johnson', 'Sarah Chen', 'Mike Rodriguez', 'Emma Wilson', 'David Kim',
-      'Lisa Zhang', 'Chris Brown', 'Maria Garcia', 'James Lee', 'Anna Taylor',
-      'Tom Anderson', 'Sophie White', 'Ryan Davis', 'Zoe Martinez', 'Jake Miller'
+    // Friends-only leaderboard with specific users
+    const friendsData = [
+      {
+        name: user?.firstName || user?.name || 'You',
+        avatar: user?.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.firstName || user?.name || 'You')}&background=4f46e5`,
+        totalPoints: 0, // Will be set after sorting
+        locationsVisited: 0, // Will be set after sorting
+        totalTime: 0, // Will be set after sorting
+        level: 0, // Will be set after sorting
+        isCurrentUser: true,
+        isFriend: true
+      },
+      {
+        name: 'Nancy',
+        avatar: '/Nancy.png', // Using the Nancy.png from your public folder
+        totalPoints: 0, // Will be set after sorting
+        locationsVisited: 0, // Will be set after sorting
+        totalTime: 0, // Will be set after sorting
+        level: 0, // Will be set after sorting
+        isCurrentUser: false,
+        isFriend: true
+      },
+      {
+        name: 'Alicia',
+        avatar: '/Alicia.png', // Using the Alicia.png from your public folder
+        totalPoints: 0, // Will be set after sorting
+        locationsVisited: 0, // Will be set after sorting
+        totalTime: 0, // Will be set after sorting
+        level: 0, // Will be set after sorting
+        isCurrentUser: false,
+        isFriend: true
+      }
     ];
 
-    return names.map((name, index) => ({
-      id: index + 1,
-      name,
-      avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
-      totalPoints: Math.floor(Math.random() * 1000) + 500,
-      locationsVisited: Math.floor(Math.random() * 20) + 5,
-      totalTime: Math.floor(Math.random() * 200) + 50,
-      level: Math.floor(Math.random() * 10) + 1,
-      isCurrentUser: name === (user?.name || user?.firstName || 'Current User')
-    })).sort((a, b) => b.totalPoints - a.totalPoints);
+    // Sort by random order first, then assign decreasing stats
+    const shuffledData = friendsData.sort(() => Math.random() - 0.5);
+    
+    // Assign decreasing stats from 1st to 3rd place
+    shuffledData.forEach((player, index) => {
+      const rank = index + 1;
+      
+      // Points decrease from 1st to 3rd (900-700, 800-600, 700-500)
+      player.totalPoints = 900 - (rank - 1) * 100 + Math.floor(Math.random() * 50);
+      
+      // Locations visited decrease from 1st to 3rd (18-15, 15-12, 12-9)
+      player.locationsVisited = 18 - (rank - 1) * 3 + Math.floor(Math.random() * 3);
+      
+      // Total time decrease from 1st to 3rd (180-150, 150-120, 120-90)
+      player.totalTime = 180 - (rank - 1) * 30 + Math.floor(Math.random() * 20);
+      
+      // Level decrease from 1st to 3rd (9-7, 7-5, 5-3)
+      player.level = 9 - (rank - 1) * 2 + Math.floor(Math.random() * 2);
+    });
+
+    return shuffledData.sort((a, b) => b.totalPoints - a.totalPoints);
   };
 
   const getRankIcon = (rank) => {
@@ -94,8 +133,8 @@ const Leaderboard = () => {
         <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">🏆 Leaderboard</h1>
-              <p className="text-gray-600">See how you rank against other campus explorers!</p>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">👥 Friends Leaderboard</h1>
+              <p className="text-gray-600">See how you rank against your friends!</p>
             </div>
             <div className="flex items-center space-x-2">
               <span className="text-sm text-gray-500">Welcome, {user?.firstName || user?.name || 'Explorer'}!</span>
@@ -131,12 +170,13 @@ const Leaderboard = () => {
           </div>
         </div>
 
-        {/* Leaderboard */}
+        {/* Friends Leaderboard */}
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-          <div className="px-6 py-4 bg-gradient-to-r from-yellow-400 to-orange-500">
+          <div className="px-6 py-4 bg-gradient-to-r from-purple-500 to-pink-500">
             <h2 className="text-xl font-bold text-white">
-              {getTimeframeText()} - {getCategoryText()}
+              👥 Friends Competition - {getTimeframeText()}
             </h2>
+            <p className="text-purple-100 text-sm mt-1">Compete with Nancy and Alicia!</p>
           </div>
 
           <div className="divide-y divide-gray-200">
@@ -144,7 +184,13 @@ const Leaderboard = () => {
               <div
                 key={player.id}
                 className={`px-6 py-4 flex items-center justify-between ${
-                  player.isCurrentUser ? 'bg-blue-50 border-l-4 border-blue-500' : ''
+                  player.isCurrentUser 
+                    ? 'bg-blue-50 border-l-4 border-blue-500' 
+                    : player.name === 'Nancy' 
+                      ? 'bg-pink-50 border-l-4 border-pink-400'
+                      : player.name === 'Alicia'
+                        ? 'bg-green-50 border-l-4 border-green-400'
+                        : ''
                 }`}
               >
                 <div className="flex items-center space-x-4">
@@ -164,6 +210,16 @@ const Leaderboard = () => {
                       {player.isCurrentUser && (
                         <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
                           You
+                        </span>
+                      )}
+                      {player.name === 'Nancy' && (
+                        <span className="bg-pink-100 text-pink-800 text-xs px-2 py-1 rounded-full">
+                          👩 Nancy
+                        </span>
+                      )}
+                      {player.name === 'Alicia' && (
+                        <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
+                          👩‍🦰 Alicia
                         </span>
                       )}
                     </div>
@@ -190,7 +246,7 @@ const Leaderboard = () => {
           </div>
         </div>
 
-        {/* Stats Summary */}
+        {/* Friends Stats Summary */}
         <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-white rounded-lg shadow-lg p-6">
             <div className="flex items-center">
@@ -198,7 +254,7 @@ const Leaderboard = () => {
                 <span className="text-2xl">🏆</span>
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900">Top Performer</h3>
+                <h3 className="font-semibold text-gray-900">Friend Leader</h3>
                 <p className="text-sm text-gray-500">{leaderboardData[0]?.name || 'N/A'}</p>
               </div>
             </div>
@@ -206,12 +262,12 @@ const Leaderboard = () => {
 
           <div className="bg-white rounded-lg shadow-lg p-6">
             <div className="flex items-center">
-              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4">
+              <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mr-4">
                 <span className="text-2xl">👥</span>
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900">Total Players</h3>
-                <p className="text-sm text-gray-500">{leaderboardData.length} explorers</p>
+                <h3 className="font-semibold text-gray-900">Friends Group</h3>
+                <p className="text-sm text-gray-500">{leaderboardData.length} friends competing</p>
               </div>
             </div>
           </div>
@@ -224,7 +280,7 @@ const Leaderboard = () => {
               <div>
                 <h3 className="font-semibold text-gray-900">Your Rank</h3>
                 <p className="text-sm text-gray-500">
-                  #{leaderboardData.findIndex(p => p.isCurrentUser) + 1 || 'N/A'}
+                  #{leaderboardData.findIndex(p => p.isCurrentUser) + 1 || 'N/A'} of {leaderboardData.length}
                 </p>
               </div>
             </div>

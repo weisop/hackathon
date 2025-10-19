@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { apiService } from '../services/api';
 
 const Settings = () => {
   const { user, signOut } = useAuth();
@@ -7,6 +8,8 @@ const Settings = () => {
   const [theme, setTheme] = useState('light');
   const [imagePreview, setImagePreview] = useState(user?.photoURL || null);
   const fileInputRef = useRef(null);
+  const [isResetting, setIsResetting] = useState(false);
+  const [resetMessage, setResetMessage] = useState('');
 
   const initials = (user?.firstName || user?.name || 'User')
     .split(' ')
@@ -24,6 +27,29 @@ const Settings = () => {
 
     // TODO: send `file` or `reader.result` to backend or an auth/profile update function
     // e.g. await updateProfile({ photo: file })
+  };
+
+  const handleResetAllStudyData = async () => {
+    if (!window.confirm('Are you sure you want to reset all your study times and levels? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      setIsResetting(true);
+      setResetMessage('');
+      
+      const result = await apiService.resetAllUserLevels();
+      setResetMessage(`✅ ${result.message} (${result.resetCount} locations reset)`);
+      
+      // Clear message after 5 seconds
+      setTimeout(() => setResetMessage(''), 5000);
+    } catch (error) {
+      console.error('Error resetting study data:', error);
+      setResetMessage('❌ Failed to reset study data. Please try again.');
+      setTimeout(() => setResetMessage(''), 5000);
+    } finally {
+      setIsResetting(false);
+    }
   };
 
   return (
@@ -105,6 +131,60 @@ const Settings = () => {
                 >
                   Reset
                 </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Study Data Management Section */}
+          <div className="bg-[#37006b] shadow rounded-lg">
+            <div className="px-4 py-5 sm:p-6">
+              <h2 className="text-lg font-medium text-[#f2ede1] mb-6">Study Data Management</h2>
+              
+              <div className="space-y-4">
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0">
+                      <span className="text-2xl">⚠️</span>
+                    </div>
+                    <div className="ml-3">
+                      <h3 className="text-sm font-medium text-red-800">Reset All Study Data</h3>
+                      <p className="text-sm text-red-700 mt-1">
+                        This will reset all your study times and levels for all locations back to zero. 
+                        This action cannot be undone.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-medium text-[#f2ede1]">Study Times & Levels</h3>
+                    <p className="text-sm text-gray-300">
+                      Reset all location study times and levels to start fresh
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleResetAllStudyData}
+                    disabled={isResetting}
+                    className={`px-4 py-2 rounded-md text-sm font-medium ${
+                      isResetting
+                        ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                        : 'bg-red-600 hover:bg-red-700 text-white'
+                    }`}
+                  >
+                    {isResetting ? '🔄 Resetting...' : '🗑️ Reset All Data'}
+                  </button>
+                </div>
+
+                {resetMessage && (
+                  <div className={`p-3 rounded-md text-sm ${
+                    resetMessage.includes('✅') 
+                      ? 'bg-green-100 text-green-800 border border-green-200'
+                      : 'bg-red-100 text-red-800 border border-red-200'
+                  }`}>
+                    {resetMessage}
+                  </div>
+                )}
               </div>
             </div>
           </div>

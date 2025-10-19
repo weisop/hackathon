@@ -515,6 +515,29 @@ export const apiService = {
         throw error;
       }
     },
+
+    // Reset all user levels and study times
+    resetAllUserLevels: async () => {
+      try {
+        // First get all user levels
+        const allLevels = await apiService.getAllUserLevels();
+        
+        // Reset each level individually
+        const resetPromises = allLevels.map(level => 
+          apiService.resetUserLevel(level.location_id, level.location_name)
+        );
+        
+        await Promise.all(resetPromises);
+        
+        return { 
+          message: 'All study times and levels have been reset successfully',
+          resetCount: allLevels.length 
+        };
+      } catch (error) {
+        console.error('Error resetting all user levels:', error);
+        throw error;
+      }
+    },
 };
 
 export default apiService;
