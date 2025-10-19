@@ -3,14 +3,16 @@ import { useAuth } from '../contexts/AuthContext';
 import { apiService } from '../services/api';
 import MapView from '../components/MapView';
 import FriendsList from '../components/FriendsList';
-import FriendsDebugger from '../components/FriendsDebugger';
+// Friends functionality temporarily disabled
+// import FriendsDebugger from '../components/FriendsDebugger';
 import DatabaseDebugger from '../components/DatabaseDebugger';
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
   const [serverStatus, setServerStatus] = useState('unknown');
   const [showFriends, setShowFriends] = useState(false);
-  const [showDebugger, setShowDebugger] = useState(false);
+  // Friends functionality temporarily disabled
+  // const [showDebugger, setShowDebugger] = useState(false);
   const [showDatabaseDebugger, setShowDatabaseDebugger] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
   // Demo markers for testing marker rendering on the map
@@ -82,12 +84,13 @@ const Dashboard = () => {
               >
                 {showFriends ? 'Hide Friends' : 'Show Friends'}
               </button>
-              <button
+              {/* Friends functionality temporarily disabled */}
+              {/* <button
                 onClick={() => setShowDebugger(!showDebugger)}
                 className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md text-sm font-medium"
               >
                 {showDebugger ? 'Hide Debugger' : '🔧 Debug Friends'}
-              </button>
+              </button> */}
               <button
                 onClick={() => setShowDatabaseDebugger(!showDatabaseDebugger)}
                 className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium"
@@ -134,8 +137,9 @@ const Dashboard = () => {
         </div>
       )}
 
+      {/* Friends functionality temporarily disabled */}
       {/* Friends Debugger Modal */}
-      {showDebugger && (
+      {/* {showDebugger && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg max-w-6xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center p-6 border-b">
@@ -152,7 +156,7 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
-      )}
+      )} */}
 
       {/* Database Debugger Modal */}
       {showDatabaseDebugger && (

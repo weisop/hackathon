@@ -88,8 +88,9 @@ export default function MapView({
   const [nearbyPlaces, setNearbyPlaces] = useState([]);
   const [isLoadingEnhanced, setIsLoadingEnhanced] = useState(false);
   const [googleMapsConfigured, setGoogleMapsConfigured] = useState(false);
-  const [friendLocations, setFriendLocations] = useState([]);
-  const [showFriendLocations, setShowFriendLocations] = useState(true);
+  // Friends functionality temporarily disabled
+  // const [friendLocations, setFriendLocations] = useState([]);
+  // const [showFriendLocations, setShowFriendLocations] = useState(true);
   const [nearbyBuilding, setNearbyBuilding] = useState(null);
   const [showYouAreHereButton, setShowYouAreHereButton] = useState(false);
   const [locationStartTime, setLocationStartTime] = useState(null);
@@ -381,17 +382,17 @@ export default function MapView({
     }
   }, []);
 
-  // Load friend locations
-  const loadFriendLocations = useCallback(async () => {
-    try {
-      const locations = await apiService.getFriendLocations();
-      setFriendLocations(locations);
-      console.log('👥 Friend locations loaded:', locations);
-    } catch (error) {
-      console.warn('⚠️ Friend locations not available (authentication required):', error.message);
-      setFriendLocations([]);
-    }
-  }, []);
+  // Friends functionality temporarily disabled
+  // const loadFriendLocations = useCallback(async () => {
+  //   try {
+  //     const locations = await apiService.getFriendLocations();
+  //     setFriendLocations(locations);
+  //     console.log('👥 Friend locations loaded:', locations);
+  //   } catch (error) {
+  //     console.warn('⚠️ Friend locations not available (authentication required):', error.message);
+  //     setFriendLocations([]);
+  //   }
+  // }, []);
 
   // Save location to backend
   const saveLocationToBackend = useCallback(async (location) => {
@@ -448,10 +449,10 @@ export default function MapView({
     recoverActiveSessions();
   }, [markers]);
 
-  // Load friend locations on component mount
-  useEffect(() => {
-    loadFriendLocations();
-  }, [loadFriendLocations]);
+  // Friends functionality temporarily disabled
+  // useEffect(() => {
+  //   loadFriendLocations();
+  // }, [loadFriendLocations]);
 
   // Stopwatch timer effect
   useEffect(() => {
@@ -610,7 +611,8 @@ export default function MapView({
             Clear History
           </button>
 
-          <button
+          {/* Friends functionality temporarily disabled */}
+          {/* <button
             onClick={() => setShowFriendLocations(!showFriendLocations)}
             className={`px-4 py-2 rounded text-sm font-medium ${
               showFriendLocations 
@@ -619,7 +621,7 @@ export default function MapView({
             }`}
           >
             {showFriendLocations ? 'Hide Friends' : 'Show Friends'}
-          </button>
+          </button> */}
         </div>
 
         {/* Error Display */}
@@ -817,8 +819,9 @@ export default function MapView({
             </>
           )}
 
+          {/* Friends functionality temporarily disabled */}
           {/* Friend locations */}
-          {showFriendLocations && friendLocations.map((friend, index) => (
+          {/* {showFriendLocations && friendLocations.map((friend, index) => (
             <Marker
               key={`friend-${friend.friend_id}`}
               position={[friend.latest_latitude, friend.latest_longitude]}
@@ -853,7 +856,7 @@ export default function MapView({
                 </div>
               </Popup>
             </Marker>
-          ))}
+          ))} */}
 
           {/* Location history trail */}
           {locationHistory.map((location, index) => (
