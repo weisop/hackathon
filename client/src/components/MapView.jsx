@@ -82,7 +82,6 @@ export default function MapView({
 }) {
   const [userLocation, setUserLocation] = useState(null);
   const [locationHistory, setLocationHistory] = useState([]);
-  const [isTracking, setIsTracking] = useState(false);
   const [error, setError] = useState(null);
   const [smoothedLocation, setSmoothedLocation] = useState(null);
   const [enhancedLocationData, setEnhancedLocationData] = useState(null);
@@ -528,31 +527,30 @@ export default function MapView({
     }
   }, [shownAchievements]);
 
-  // Start/stop location tracking
-  const toggleTracking = () => {
-    if (isTracking) {
-      setIsTracking(false);
+  // Automatically start tracking when component mounts
+  useEffect(() => {
+    // Start tracking immediately when component mounts
+    getCurrentLocation();
+    startTimeRef.current = Date.now();
+
+    // Cleanup function to stop tracking when component unmounts
+    return () => {
       if (watchIdRef.current) {
         navigator.geolocation.clearWatch(watchIdRef.current);
         watchIdRef.current = null;
       }
-    } else {
-      getCurrentLocation();
-      setIsTracking(true);
-      startTimeRef.current = Date.now();
-    }
-  };
+    };
+  }, []);
 
   // Watch position for continuous tracking with precision
   useEffect(() => {
-    if (isTracking) {
-      const options = {
-        enableHighAccuracy: true,
-        timeout: 15000,
-        maximumAge: 10000
-      };
-      
-      watchIdRef.current = navigator.geolocation.watchPosition(
+    const options = {
+      enableHighAccuracy: true,
+      timeout: 15000,
+      maximumAge: 10000
+    };
+    
+    watchIdRef.current = navigator.geolocation.watchPosition(
         (position) => {
           const location = {
             latitude: position.coords.latitude,
@@ -608,7 +606,6 @@ export default function MapView({
         },
         options
       );
-    }
 
     return () => {
       if (watchIdRef.current) {
@@ -616,7 +613,7 @@ export default function MapView({
         watchIdRef.current = null;
       }
     };
-  }, [isTracking, smoothLocation, onLocationUpdate]);
+  }, [smoothLocation, onLocationUpdate]);
 
   return (
     <div className="map-container relative">
