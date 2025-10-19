@@ -227,8 +227,8 @@ const LocationLevelProgress = ({
           <span>{Math.round(progressPercentage)}% complete</span>
           <span>
             {isLevelFullyComplete 
-              ? '🎉 Level Complete!' 
-              : `${formatTime(requiredTime - elapsedHours)} remaining`
+              ? '⚔️ Territory Conquered!' 
+              : `${formatTime(requiredTime - elapsedHours)} until conquest`
             }
           </span>
         </div>
@@ -239,22 +239,22 @@ const LocationLevelProgress = ({
         <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg p-4 mb-3">
           <div className="text-center">
             <div className="text-xl font-bold text-green-800 mb-2 flex items-center justify-center space-x-2">
-              <span>🎉</span>
-              <span>Level {currentLevel} Complete!</span>
-              <span>🎉</span>
+              <span>⚔️</span>
+              <span>Territory Level {currentLevel} Conquered!</span>
+              <span>⚔️</span>
             </div>
             <p className="text-sm text-green-700 mb-3">
-              You've mastered this location! Ready for the next challenge?
+              You have successfully conquered this territory! Ready to expand your dominion to the next level?
             </p>
             <div className="space-y-2">
               <div className="text-xs text-gray-600">
-                Next level requires: {formatTime(calculateLevelTime(currentLevel + 1))}
+                Next conquest requires: {formatTime(calculateLevelTime(currentLevel + 1))}
               </div>
               <button
                 onClick={advanceToNextLevel}
                 className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white px-6 py-3 rounded-lg font-semibold transition-all transform hover:scale-105 shadow-lg"
               >
-                🚀 Advance to Level {currentLevel + 1}
+                ⚔️ Expand Dominion to Level {currentLevel + 1}
               </button>
             </div>
           </div>
@@ -264,7 +264,7 @@ const LocationLevelProgress = ({
       {/* Next Level Preview - Only show when level is not complete */}
       {!isLevelFullyComplete && (
         <div className="text-xs text-gray-500 text-center">
-          Next level requires {formatTime(calculateLevelTime(currentLevel + 1))}
+          Next conquest requires {formatTime(calculateLevelTime(currentLevel + 1))}
         </div>
       )}
     </div>
