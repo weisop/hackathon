@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { apiService } from '../services/api';
+import AuthTester from './AuthTester';
 
 export default function DatabaseDebugger() {
   const [debugInfo, setDebugInfo] = useState({});
@@ -25,13 +26,31 @@ export default function DatabaseDebugger() {
       setDebugInfo(prev => ({ ...prev, apiHealth: 'FAILED' }));
     }
 
+    // Check if user is authenticated
+    const token = localStorage.getItem('token');
+    if (!token) {
+      addLog('❌ No authentication token found - you need to be logged in', 'error');
+      addLog('Please log in to the app first, then run this test again', 'info');
+      setDebugInfo(prev => ({ ...prev, authenticated: false }));
+      setIsLoading(false);
+      return;
+    }
+
+    addLog('✅ Authentication token found', 'success');
+    setDebugInfo(prev => ({ ...prev, authenticated: true }));
+
     try {
       // Test location sessions API
       const activeSessions = await apiService.getActiveLocationSessions();
       addLog(`✅ Active sessions API working - Found ${activeSessions.length} sessions`, 'success');
       setDebugInfo(prev => ({ ...prev, activeSessions: activeSessions.length }));
     } catch (error) {
-      addLog(`❌ Active sessions API failed: ${error.message}`, 'error');
+      if (error.response?.status === 401) {
+        addLog('❌ Active sessions API failed: 401 Unauthorized - Authentication issue', 'error');
+        addLog('Try logging out and logging back in', 'info');
+      } else {
+        addLog(`❌ Active sessions API failed: ${error.message}`, 'error');
+      }
       setDebugInfo(prev => ({ ...prev, activeSessions: 'ERROR' }));
     }
 
@@ -41,7 +60,11 @@ export default function DatabaseDebugger() {
       addLog(`✅ Session history API working - Found ${history.length} sessions`, 'success');
       setDebugInfo(prev => ({ ...prev, sessionHistory: history.length }));
     } catch (error) {
-      addLog(`❌ Session history API failed: ${error.message}`, 'error');
+      if (error.response?.status === 401) {
+        addLog('❌ Session history API failed: 401 Unauthorized - Authentication issue', 'error');
+      } else {
+        addLog(`❌ Session history API failed: ${error.message}`, 'error');
+      }
       setDebugInfo(prev => ({ ...prev, sessionHistory: 'ERROR' }));
     }
 
@@ -155,14 +178,29 @@ export default function DatabaseDebugger() {
     <div className="database-debugger bg-gray-100 p-6 rounded-lg shadow-md max-w-4xl mx-auto">
       <h2 className="text-2xl font-bold text-gray-800 mb-4">🔧 Database Debugger</h2>
       
+      {/* Authentication Tester */}
+      <div className="mb-6">
+        <AuthTester />
+      </div>
+      
       {/* Debug Info Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
         <div className="bg-white p-4 rounded-lg shadow">
           <h3 className="font-semibold text-gray-700">API Health</h3>
           <p className={`text-2xl font-bold ${
             debugInfo.apiHealth === 'OK' ? 'text-green-600' : 'text-red-600'
           }`}>
             {debugInfo.apiHealth || 'Unknown'}
+          </p>
+        </div>
+        <div className="bg-white p-4 rounded-lg shadow">
+          <h3 className="font-semibold text-gray-700">Authentication</h3>
+          <p className={`text-2xl font-bold ${
+            debugInfo.authenticated === true ? 'text-green-600' : 
+            debugInfo.authenticated === false ? 'text-red-600' : 'text-gray-600'
+          }`}>
+            {debugInfo.authenticated === true ? '✅' : 
+             debugInfo.authenticated === false ? '❌' : '❓'}
           </p>
         </div>
         <div className="bg-white p-4 rounded-lg shadow">
