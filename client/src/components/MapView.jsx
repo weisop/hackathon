@@ -4,6 +4,7 @@ import L from 'leaflet';
 import './MapView.css';
 import { apiService } from '../services/api';
 import LocationProgressBar from './LocationProgressBar';
+import LocationLevelProgress from './LocationLevelProgress';
 import CelebrationModal from './CelebrationModal';
 
 // Optional: custom icon fix for default markers in React
@@ -195,6 +196,18 @@ export default function MapView({
   const handleAchievementComplete = (achievement) => {
     console.log('🎉 Achievement completed!', achievement);
     setAchievementData(achievement);
+    setShowCelebration(true);
+  };
+
+  const handleLevelComplete = (levelData) => {
+    console.log('🎉 Level completed!', levelData);
+    setAchievementData({
+      locationName: levelData.locationName,
+      targetHours: 0.167, // Base time
+      achievedHours: levelData.timeSpent / 3600,
+      progressPercentage: 100,
+      level: levelData.level
+    });
     setShowCelebration(true);
   };
 
@@ -890,15 +903,15 @@ export default function MapView({
         </MapContainer>
       </div>
 
-      {/* Location Progress Bar */}
+      {/* Location Level Progress */}
       {showProgressBar && nearbyBuilding && (
         <div className="absolute bottom-4 left-4 z-10">
-          <LocationProgressBar
+          <LocationLevelProgress
+            locationId={nearbyBuilding.id}
             locationName={nearbyBuilding.name}
             elapsedTime={elapsedTime}
-            targetHours={nearbyBuilding.targetHours}
             isVisible={showProgressBar}
-            onAchievementComplete={handleAchievementComplete}
+            onLevelComplete={handleLevelComplete}
           />
         </div>
       )}

@@ -440,6 +440,68 @@ export const apiService = {
         throw error;
       }
     },
+
+    // ===== LOCATION LEVELS API METHODS =====
+
+    // Get user's level for a specific location
+    getUserLocationLevel: async (locationId) => {
+      try {
+        const response = await api.get(`/location-levels/${locationId}`);
+        return response.data;
+      } catch (error) {
+        console.error('Error getting user level:', error);
+        throw error;
+      }
+    },
+
+    // Get all user's location levels
+    getAllUserLevels: async () => {
+      try {
+        const response = await api.get('/location-levels');
+        return response.data;
+      } catch (error) {
+        console.error('Error getting user levels:', error);
+        throw error;
+      }
+    },
+
+    // Update time spent at a location
+    updateLocationTime: async (locationId, timeSpentSeconds, locationName) => {
+      try {
+        const response = await api.post(`/location-levels/${locationId}/time`, {
+          timeSpentSeconds,
+          locationName
+        });
+        return response.data;
+      } catch (error) {
+        console.error('Error updating location time:', error);
+        throw error;
+      }
+    },
+
+    // Advance user to next level
+    advanceToNextLevel: async (locationId, locationName) => {
+      try {
+        const response = await api.post(`/location-levels/${locationId}/advance`, {
+          locationName
+        });
+        return response.data;
+      } catch (error) {
+        console.error('Error advancing level:', error);
+        throw error;
+      }
+    },
+
+    // Get level achievements
+    getLevelAchievements: async () => {
+      try {
+        const response = await api.get('/location-levels/achievements');
+        return response.data;
+      } catch (error) {
+        console.error('Error getting level achievements:', error);
+        throw error;
+      }
+    },
 };
 
 export default apiService;

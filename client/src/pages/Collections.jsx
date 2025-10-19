@@ -11,9 +11,30 @@ const Collections = () => {
     const fetchAchievements = async () => {
       try {
         setLoading(true);
-        const data = await apiService.getLocationAchievements();
-        console.log('📊 Fetched achievements:', data);
-        setAchievements(data || []);
+        // Fetch both regular achievements and level achievements
+        const [regularAchievements, levelAchievements] = await Promise.all([
+          apiService.getLocationAchievements().catch(() => []),
+          apiService.getLevelAchievements().catch(() => [])
+        ]);
+        
+        console.log('📊 Fetched achievements:', { regularAchievements, levelAchievements });
+        
+        // Combine and format achievements
+        const allAchievements = [
+          ...regularAchievements.map(achievement => ({
+            ...achievement,
+            type: 'regular',
+            level: 1
+          })),
+          ...levelAchievements.map(achievement => ({
+            ...achievement,
+            type: 'level',
+            target_hours: achievement.required_time_hours,
+            achieved_hours: achievement.achieved_time_hours
+          }))
+        ];
+        
+        setAchievements(allAchievements);
       } catch (error) {
         console.error('Error fetching achievements:', error);
         // Set some demo data if API fails
@@ -24,15 +45,19 @@ const Collections = () => {
             target_hours: 0.167,
             achieved_hours: 0.167,
             achievement_date: new Date().toISOString(),
-            is_milestone: true
+            is_milestone: true,
+            type: 'level',
+            level: 1
           },
           {
             id: '2',
             location_name: 'Library',
-            target_hours: 0.167,
-            achieved_hours: 0.167,
+            target_hours: 0.25,
+            achieved_hours: 0.25,
             achievement_date: new Date(Date.now() - 86400000).toISOString(),
-            is_milestone: false
+            is_milestone: false,
+            type: 'level',
+            level: 2
           }
         ]);
       } finally {
@@ -60,6 +85,28 @@ const Collections = () => {
       const minutes = Math.floor((hours - wholeHours) * 60);
       return minutes > 0 ? `${wholeHours}h ${minutes}m` : `${wholeHours}h`;
     }
+  };
+
+  const getLevelTitle = (level) => {
+    const titles = {
+      1: 'Novice',
+      2: 'Explorer', 
+      3: 'Regular',
+      4: 'Expert',
+      5: 'Master'
+    };
+    return titles[Math.min(level, 5)] || `Level ${level}`;
+  };
+
+  const getLevelColor = (level) => {
+    const colors = {
+      1: 'bg-green-500',
+      2: 'bg-blue-500', 
+      3: 'bg-purple-500',
+      4: 'bg-yellow-500',
+      5: 'bg-red-500'
+    };
+    return colors[Math.min(level, 5)] || 'bg-gray-500';
   };
 
   const refreshAchievements = async () => {
@@ -138,14 +185,28 @@ const Collections = () => {
                       className="bg-gradient-to-br from-primary-50 to-primary-100 rounded-lg p-6 border border-primary-200"
                     >
                       <div className="flex items-center justify-between mb-4">
-                        <div className="text-4xl">
-                          {getAchievementIcon(achievement.location_name)}
+                        <div className="flex items-center space-x-3">
+                          <div className="text-4xl">
+                            {getAchievementIcon(achievement.location_name)}
+                          </div>
+                          {achievement.level && (
+                            <div className={`w-10 h-10 rounded-full ${getLevelColor(achievement.level)} flex items-center justify-center text-white font-bold text-lg`}>
+                              {achievement.level}
+                            </div>
+                          )}
                         </div>
-                        {achievement.is_milestone && (
-                          <span className="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                            Milestone
-                          </span>
-                        )}
+                        <div className="flex items-center space-x-2">
+                          {achievement.level && (
+                            <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                              {getLevelTitle(achievement.level)}
+                            </span>
+                          )}
+                          {achievement.is_milestone && (
+                            <span className="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                              Milestone
+                            </span>
+                          )}
+                        </div>
                       </div>
                       
                       <h3 className="text-lg font-semibold text-gray-900 mb-2">
@@ -165,6 +226,12 @@ const Collections = () => {
                           <span className="text-gray-600">Date:</span>
                           <span className="font-medium">{formatDate(achievement.achievement_date)}</span>
                         </div>
+                        {achievement.type === 'level' && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-600">Type:</span>
+                            <span className="font-medium text-purple-600">Level Achievement</span>
+                          </div>
+                        )}
                       </div>
                       
                       <div className="mt-4 pt-4 border-t border-primary-200">

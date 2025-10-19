@@ -868,6 +868,140 @@ app.post('/api/location-sessions/achievements', requireAuth, async (req, res) =>
   }
 });
 
+// ===== LOCATION LEVELS API ENDPOINTS =====
+
+// Get user's level for a specific location
+app.get('/api/location-levels/:locationId', requireAuth, async (req, res) => {
+  try {
+    const { locationId } = req.params;
+    
+    const { data: level, error } = await supabase
+      .rpc('get_or_create_user_level', {
+        p_user_id: req.user.id,
+        p_location_id: locationId,
+        p_location_name: locationId // You might want to pass the actual name
+      });
+
+    if (error) throw error;
+    res.json(level);
+  } catch (error) {
+    console.error('Error getting user level:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get all user's location levels
+app.get('/api/location-levels', requireAuth, async (req, res) => {
+  try {
+    const { data: levels, error } = await supabase
+      .from('location_levels')
+      .select('*')
+      .eq('user_id', req.user.id)
+      .order('updated_at', { ascending: false });
+
+    if (error) throw error;
+    res.json(levels);
+  } catch (error) {
+    console.error('Error getting user levels:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update user's time spent at a location
+app.post('/api/location-levels/:locationId/time', requireAuth, async (req, res) => {
+  try {
+    const { locationId } = req.params;
+    const { timeSpentSeconds, locationName } = req.body;
+    
+    if (!timeSpentSeconds) {
+      return res.status(400).json({ error: 'Time spent is required' });
+    }
+
+    // Get or create user level
+    const { data: userLevel, error: levelError } = await supabase
+      .rpc('get_or_create_user_level', {
+        p_user_id: req.user.id,
+        p_location_id: locationId,
+        p_location_name: locationName || locationId
+      });
+
+    if (levelError) throw levelError;
+
+    // Update time spent
+    const newTotalTime = userLevel.total_time_spent_seconds + timeSpentSeconds;
+    
+    const { data: updatedLevel, error: updateError } = await supabase
+      .from('location_levels')
+      .update({
+        total_time_spent_seconds: newTotalTime,
+        updated_at: new Date().toISOString()
+      })
+      .eq('user_id', req.user.id)
+      .eq('location_id', locationId)
+      .select()
+      .single();
+
+    if (updateError) throw updateError;
+
+    // Check if level is completed
+    const { data: isCompleted, error: checkError } = await supabase
+      .rpc('check_level_completion', {
+        p_user_id: req.user.id,
+        p_location_id: locationId,
+        p_level: userLevel.current_level
+      });
+
+    if (checkError) throw checkError;
+
+    res.json({ 
+      level: updatedLevel, 
+      isCompleted: isCompleted,
+      timeSpent: newTotalTime
+    });
+  } catch (error) {
+    console.error('Error updating location time:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Advance user to next level
+app.post('/api/location-levels/:locationId/advance', requireAuth, async (req, res) => {
+  try {
+    const { locationId } = req.params;
+    const { locationName } = req.body;
+
+    const { data: newLevel, error } = await supabase
+      .rpc('advance_to_next_level', {
+        p_user_id: req.user.id,
+        p_location_id: locationId,
+        p_location_name: locationName || locationId
+      });
+
+    if (error) throw error;
+    res.json({ message: 'Level advanced', level: newLevel });
+  } catch (error) {
+    console.error('Error advancing level:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get level achievements
+app.get('/api/location-levels/achievements', requireAuth, async (req, res) => {
+  try {
+    const { data: achievements, error } = await supabase
+      .from('location_level_achievements')
+      .select('*')
+      .eq('user_id', req.user.id)
+      .order('achievement_date', { ascending: false });
+
+    if (error) throw error;
+    res.json(achievements);
+  } catch (error) {
+    console.error('Error getting level achievements:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
