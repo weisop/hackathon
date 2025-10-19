@@ -9,7 +9,7 @@ import { SignIn, SignUp } from './components/Auth';
 import LoadingScreen from './components/LoadingScreen';
 
 function AppContent() {
-  const { user, loading, isAuthenticated } = useAuth();
+  const { user, loading, isAuthenticated, signOut } = useAuth();
   const [showSignUp, setShowSignUp] = useState(false);
 
   if (loading) {
@@ -32,7 +32,7 @@ function AppContent() {
           <div className="flex justify-between h-16">
             <div className="flex">
               <div className="flex-shrink-0 flex items-center">
-                <h1 className="text-xl font-bold text-gray-900">Web App</h1>
+                <h1 className="text-xl font-bold text-gray-900">ConQuest</h1>
               </div>
               <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
                 <Link
@@ -62,7 +62,7 @@ function AppContent() {
               </div>
             </div>
             <div className="flex items-center">
-              <span className="text-sm text-gray-700">Welcome, {user?.name || 'User'}!</span>
+              {/* Sign out button moved to profile page only */}
             </div>
           </div>
         </div>

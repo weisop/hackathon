@@ -70,16 +70,6 @@ const Dashboard = () => {
           <div className="flex justify-between items-center py-6">
             <div className="flex items-center">
               <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-              <div className="ml-4 flex items-center">
-                <span className="text-sm text-gray-500">Server Status:</span>
-                <span className={`ml-2 px-2 py-1 text-xs font-semibold rounded-full ${
-                  serverStatus === 'connected' 
-                    ? 'bg-green-100 text-green-800' 
-                    : 'bg-red-100 text-red-800'
-                }`}>
-                  {serverStatus}
-                </span>
-              </div>
             </div>
             <div className="flex items-center space-x-4">
               <button
@@ -88,13 +78,7 @@ const Dashboard = () => {
               >
                 {showFriends ? 'Hide Friends' : 'Show Friends'}
               </button>
-              <span className="text-sm text-gray-700">Welcome, {user?.name || 'User'}!</span>
-              <button
-                onClick={signOut}
-                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium"
-              >
-                Sign Out
-              </button>
+              <span className="text-sm text-gray-700">Welcome, {user?.firstName || user?.name || 'User'}!</span>
             </div>
           </div>
         </div>

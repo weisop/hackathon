@@ -1,6 +1,37 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { signIn as supabaseSignIn, signUp as supabaseSignUp, signOut as supabaseSignOut, getCurrentUser } from '../lib/supabase';
 
+// Helper function to extract first name from user data
+const extractFirstName = (user) => {
+  // Try to get first name from user metadata
+  if (user?.user_metadata?.full_name) {
+    return user.user_metadata.full_name.split(' ')[0];
+  }
+  
+  // Try to get first name from user metadata name
+  if (user?.user_metadata?.name) {
+    return user.user_metadata.name.split(' ')[0];
+  }
+  
+  // Try to get first name from raw user metadata
+  if (user?.raw_user_meta_data?.full_name) {
+    return user.raw_user_meta_data.full_name.split(' ')[0];
+  }
+  
+  // Try to get first name from raw user metadata name
+  if (user?.raw_user_meta_data?.name) {
+    return user.raw_user_meta_data.name.split(' ')[0];
+  }
+  
+  // Fallback to email prefix if no name is available
+  if (user?.email) {
+    return user.email.split('@')[0];
+  }
+  
+  // Final fallback
+  return 'User';
+};
+
 const AuthContext = createContext();
 
 export const useAuth = () => {
@@ -21,7 +52,12 @@ export const AuthProvider = ({ children }) => {
         // Try Supabase first
         const { user } = await getCurrentUser();
         if (user) {
-          setUser(user);
+          // Extract first name from Google user metadata
+          const userWithFirstName = {
+            ...user,
+            firstName: extractFirstName(user)
+          };
+          setUser(userWithFirstName);
           setLoading(false);
           return;
         }
@@ -58,7 +94,11 @@ export const AuthProvider = ({ children }) => {
       // Try Supabase first
       const { data, error } = await supabaseSignIn(email, password);
       if (!error && data?.user) {
-        setUser(data.user);
+        const userWithFirstName = {
+          ...data.user,
+          firstName: extractFirstName(data.user)
+        };
+        setUser(userWithFirstName);
         return { success: true };
       }
       

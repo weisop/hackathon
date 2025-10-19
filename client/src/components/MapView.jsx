@@ -89,6 +89,8 @@ export default function MapView({
   const [showFriendLocations, setShowFriendLocations] = useState(true);
   const [nearbyBuilding, setNearbyBuilding] = useState(null);
   const [showYouAreHereButton, setShowYouAreHereButton] = useState(false);
+  const [locationStartTime, setLocationStartTime] = useState(null);
+  const [elapsedTime, setElapsedTime] = useState(0);
   
   const watchIdRef = useRef(null);
   const startTimeRef = useRef(null);
@@ -142,17 +144,43 @@ export default function MapView({
         const distance = calculateDistance(userLat, userLng, marker.latitude, marker.longitude);
         
         if (distance <= PROXIMITY_THRESHOLD) {
+          // If we're at the same building, don't reset the timer
+          if (nearbyBuilding && nearbyBuilding.id === marker.id) {
+            setNearbyBuilding(marker);
+            setShowYouAreHereButton(true);
+            return;
+          }
+          
+          // New building or first time at this building - start timer
           setNearbyBuilding(marker);
           setShowYouAreHereButton(true);
+          setLocationStartTime(Date.now());
+          setElapsedTime(0);
           return;
         }
       }
     }
     
-    // If no nearby building found, hide the button
+    // If no nearby building found, hide the button and stop timer
     setNearbyBuilding(null);
     setShowYouAreHereButton(false);
-  }, [markers, calculateDistance]);
+    setLocationStartTime(null);
+    setElapsedTime(0);
+  }, [markers, calculateDistance, nearbyBuilding]);
+
+  // Format elapsed time for display
+  const formatElapsedTime = (milliseconds) => {
+    const totalSeconds = Math.floor(milliseconds / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    
+    if (hours > 0) {
+      return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    } else {
+      return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    }
+  };
 
   // Get precision options based on mode
   const getPrecisionOptions = (mode) => {
@@ -265,7 +293,8 @@ export default function MapView({
         console.warn('⚠️ Google Maps API not configured:', config.message);
       }
     } catch (error) {
-      console.error('❌ Failed to check Google Maps config:', error);
+      console.warn('⚠️ Google Maps config check failed (optional):', error.message);
+      setGoogleMapsConfigured(false);
     }
   }, []);
 
@@ -276,7 +305,8 @@ export default function MapView({
       setFriendLocations(locations);
       console.log('👥 Friend locations loaded:', locations);
     } catch (error) {
-      console.error('❌ Failed to load friend locations:', error);
+      console.warn('⚠️ Friend locations not available (authentication required):', error.message);
+      setFriendLocations([]);
     }
   }, []);
 
@@ -291,7 +321,7 @@ export default function MapView({
       });
       console.log('💾 Location saved to backend');
     } catch (error) {
-      console.error('❌ Failed to save location:', error);
+      console.warn('⚠️ Location tracking not available (authentication required):', error.message);
     }
   }, [enhancedLocationData]);
 
@@ -304,6 +334,19 @@ export default function MapView({
   useEffect(() => {
     loadFriendLocations();
   }, [loadFriendLocations]);
+
+  // Stopwatch timer effect
+  useEffect(() => {
+    let interval;
+    if (locationStartTime) {
+      interval = setInterval(() => {
+        setElapsedTime(Date.now() - locationStartTime);
+      }, 1000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [locationStartTime]);
 
   // Start/stop location tracking
   const toggleTracking = () => {
@@ -620,7 +663,47 @@ export default function MapView({
                     iconSize: [200, 40],
                     iconAnchor: [100, 40]
                   })}
-                />
+                >
+                  <Popup>
+                    <div className="p-3">
+                      <div className="flex items-center mb-2">
+                        <span className="text-2xl mr-2">📍</span>
+                        <div>
+                          <h3 className="font-bold text-lg text-gray-800">You are here!</h3>
+                          <p className="text-sm text-gray-600">Currently at</p>
+                        </div>
+                      </div>
+                      <div className="bg-green-50 p-3 rounded-lg border border-green-200">
+                        <h4 className="font-semibold text-green-800 text-base mb-1">{nearbyBuilding.name}</h4>
+                        <p className="text-sm text-green-700">You're currently at this location</p>
+                      </div>
+                      
+                      {/* Stopwatch Section */}
+                      <div className="mt-3 bg-blue-50 p-3 rounded-lg border border-blue-200">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h5 className="font-semibold text-blue-800 text-sm">⏱️ Time at location</h5>
+                            <p className="text-xs text-blue-600">How long you've been here</p>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-2xl font-mono font-bold text-blue-800">
+                              {formatElapsedTime(elapsedTime)}
+                            </div>
+                            <div className="text-xs text-blue-600">
+                              {elapsedTime > 0 ? 'Running...' : 'Just arrived'}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="mt-3 text-xs text-gray-500">
+                        <p>📍 Location: {userLocation.latitude.toFixed(6)}, {userLocation.longitude.toFixed(6)}</p>
+                        <p>🎯 Accuracy: {userLocation.accuracy.toFixed(1)}m</p>
+                        {userLocation.smoothed && <p>✨ Smoothed location data</p>}
+                      </div>
+                    </div>
+                  </Popup>
+                </Marker>
               )}
             </>
           )}

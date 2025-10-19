@@ -6,7 +6,7 @@ const Profile = () => {
   const [imagePreview, setImagePreview] = useState(user?.photoURL || null);
   const fileInputRef = useRef(null);
 
-  const initials = (user?.name || 'User')
+  const initials = (user?.firstName || user?.name || 'User')
     .split(' ')
     .map((n) => n[0] || '')
     .slice(0, 2)
@@ -30,12 +30,6 @@ const Profile = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <h1 className="text-3xl font-bold text-gray-900">Profile</h1>
-            <button
-              onClick={signOut}
-              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium"
-            >
-              Sign Out
-            </button>
           </div>
         </div>
       </header>
@@ -73,7 +67,7 @@ const Profile = () => {
               </div>
 
               <div className="flex-1">
-                <div className="text-lg font-semibold text-gray-900">{user?.name || 'User'}</div>
+                <div className="text-lg font-semibold text-gray-900">{user?.firstName || user?.name || 'User'}</div>
                 <div className="text-sm text-gray-500">{user?.email}</div>
 
                 <p className="mt-4 text-sm text-gray-600">
