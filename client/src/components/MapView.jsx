@@ -168,7 +168,7 @@ export default function MapView({
       setSessionId(response.session.id);
       console.log('✅ Location session started:', response.session);
     } catch (error) {
-      console.error('❌ Failed to start location session:', error);
+      console.warn('⚠️ Location session not available (continuing with local tracking):', error.message);
       // Continue with local tracking even if database fails
     }
   }, []);
@@ -181,7 +181,7 @@ export default function MapView({
       await apiService.endLocationSession(sessionId);
       console.log('✅ Location session ended');
     } catch (error) {
-      console.error('❌ Failed to end location session:', error);
+      console.warn('⚠️ Could not end location session:', error.message);
     } finally {
       setActiveSession(null);
       setSessionId(null);
@@ -381,7 +381,7 @@ export default function MapView({
         console.log('🌟 Enhanced location data loaded:', enhancedData);
       }
     } catch (error) {
-      console.error('❌ Failed to get enhanced location data:', error);
+      console.warn('⚠️ Enhanced location data not available:', error.message);
     } finally {
       setIsLoadingEnhanced(false);
     }

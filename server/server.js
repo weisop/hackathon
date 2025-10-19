@@ -575,7 +575,8 @@ app.post('/api/location/track', requireAuth, async (req, res) => {
     
     res.json({ message: 'Location saved', location: data });
   } catch (error) {
-    console.error('Error saving location:', error);
+    // Log as warning instead of error since we're handling it gracefully
+    console.warn('⚠️ Location tracking issue (handled gracefully):', error.message);
     // Return success with warning instead of 500 error
     res.json({ 
       message: 'Location received (tracking may be disabled)', 
