@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "concurrently \"npm run server:dev\" \"npm run client:dev\"",
+    "dev:dynamic": "node start-dynamic.js",
     "server:dev": "cd server && npm run dev",
     "client:dev": "cd client && npm run dev",
     "server:start": "cd server && npm start",
@@ -26,7 +27,10 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.75.1",
+<<<<<<< HEAD
     "leaflet": "^1.9.4",
+=======
+>>>>>>> refs/remotes/origin/main
     "react-leaflet": "^5.0.0"
   }
 }

@@ -1,13 +1,70 @@
 import axios from 'axios';
+import { API_CONFIG } from '../config/environment.js';
 
-const API_BASE_URL = 'http://localhost:3001/api';
+// Dynamic API URL detection
+let API_BASE_URL = API_CONFIG.baseURL;
+
+// Function to detect the correct API port
+const detectApiUrl = async () => {
+  try {
+    const detectedUrl = await API_CONFIG.detectPort();
+    API_BASE_URL = `${detectedUrl}/api`;
+    console.log(`🔗 API detected at: ${API_BASE_URL}`);
+    return API_BASE_URL;
+  } catch (error) {
+    console.warn('⚠️ Could not auto-detect API port, using default:', API_BASE_URL);
+    return API_BASE_URL;
+  }
+};
+
+// Initialize API URL
+detectApiUrl();
 
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: API_CONFIG.timeout,
 });
+
+// Add request interceptor to handle dynamic URL updates
+api.interceptors.request.use(async (config) => {
+  // Update base URL if needed
+  if (config.baseURL !== API_BASE_URL) {
+    config.baseURL = API_BASE_URL;
+  }
+  return config;
+});
+
+// Add response interceptor for error handling and retry logic
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+    
+    // If it's a network error and we haven't retried yet
+    if (error.code === 'ERR_NETWORK' && !originalRequest._retry) {
+      originalRequest._retry = true;
+      
+      try {
+        // Try to detect a new API URL
+        const newApiUrl = await API_CONFIG.detectPort();
+        API_BASE_URL = `${newApiUrl}/api`;
+        api.defaults.baseURL = API_BASE_URL;
+        
+        console.log(`🔄 Retrying with new API URL: ${API_BASE_URL}`);
+        
+        // Retry the original request
+        return api(originalRequest);
+      } catch (detectionError) {
+        console.error('❌ Failed to detect API URL:', detectionError);
+      }
+    }
+    
+    return Promise.reject(error);
+  }
+);
 
 export const apiService = {
   // Get all items
@@ -61,6 +118,239 @@ export const apiService = {
       return response.data;
     } catch (error) {
       console.error('Error checking server health:', error);
+      throw error;
+    }
+  },
+
+  // Enhanced Location Services
+  // Get enhanced location data (geocoding + nearby places)
+  getEnhancedLocation: async (latitude, longitude) => {
+    try {
+      const response = await api.post('/location/enhanced', {
+        latitude,
+        longitude
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error getting enhanced location:', error);
+      throw error;
+    }
+  },
+
+  // Geocode coordinates to address
+  geocodeLocation: async (latitude, longitude) => {
+    try {
+      const response = await api.post('/location/geocode', {
+        latitude,
+        longitude
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error geocoding location:', error);
+      throw error;
+    }
+  },
+
+  // Get nearby places
+  getNearbyPlaces: async (latitude, longitude, radius = 1000, type = 'establishment') => {
+    try {
+      const response = await api.post('/location/nearby', {
+        latitude,
+        longitude,
+        radius,
+        type
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error getting nearby places:', error);
+      throw error;
+    }
+  },
+
+  // Get place details
+  getPlaceDetails: async (placeId) => {
+    try {
+      const response = await api.get(`/location/place/${placeId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error getting place details:', error);
+      throw error;
+    }
+  },
+
+  // Calculate distance between two points
+  calculateDistance: async (origin, destination, mode = 'driving') => {
+    try {
+      const response = await api.post('/location/distance', {
+        origin,
+        destination,
+        mode
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error calculating distance:', error);
+      throw error;
+    }
+  },
+
+  // Get directions between two points
+  getDirections: async (origin, destination, mode = 'driving') => {
+    try {
+      const response = await api.post('/location/directions', {
+        origin,
+        destination,
+        mode
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error getting directions:', error);
+      throw error;
+    }
+  },
+
+  // Check Google Maps API configuration
+  checkLocationConfig: async () => {
+    try {
+      const response = await api.get('/location/config');
+      return response.data;
+    } catch (error) {
+      console.error('Error checking location config:', error);
+      throw error;
+    }
+  },
+
+  // ===== FRIENDS SYSTEM API METHODS =====
+
+  // Get user's friends
+  getFriends: async () => {
+    try {
+      const response = await api.get('/friends');
+      return response.data;
+    } catch (error) {
+      console.error('Error getting friends:', error);
+      throw error;
+    }
+  },
+
+  // Get pending friend requests
+  getFriendRequests: async () => {
+    try {
+      const response = await api.get('/friends/requests');
+      return response.data;
+    } catch (error) {
+      console.error('Error getting friend requests:', error);
+      throw error;
+    }
+  },
+
+  // Send friend request
+  sendFriendRequest: async (friendEmail) => {
+    try {
+      const response = await api.post('/friends/request', { friendEmail });
+      return response.data;
+    } catch (error) {
+      console.error('Error sending friend request:', error);
+      throw error;
+    }
+  },
+
+  // Accept friend request
+  acceptFriendRequest: async (requestId) => {
+    try {
+      const response = await api.post(`/friends/accept/${requestId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error accepting friend request:', error);
+      throw error;
+    }
+  },
+
+  // Reject friend request
+  rejectFriendRequest: async (requestId) => {
+    try {
+      const response = await api.post(`/friends/reject/${requestId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error rejecting friend request:', error);
+      throw error;
+    }
+  },
+
+  // Remove friend
+  removeFriend: async (friendId) => {
+    try {
+      const response = await api.delete(`/friends/${friendId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error removing friend:', error);
+      throw error;
+    }
+  },
+
+  // ===== LOCATION TRACKING API METHODS =====
+
+  // Save location data
+  trackLocation: async (locationData) => {
+    try {
+      const response = await api.post('/location/track', locationData);
+      return response.data;
+    } catch (error) {
+      console.error('Error tracking location:', error);
+      throw error;
+    }
+  },
+
+  // Get friend locations
+  getFriendLocations: async () => {
+    try {
+      const response = await api.get('/friends/locations');
+      return response.data;
+    } catch (error) {
+      console.error('Error getting friend locations:', error);
+      throw error;
+    }
+  },
+
+  // Check nearby friends
+  checkNearbyFriends: async (latitude, longitude, distance = 1000) => {
+    try {
+      const response = await api.post('/friends/nearby', {
+        latitude,
+        longitude,
+        distance
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error checking nearby friends:', error);
+      throw error;
+    }
+  },
+
+  // ===== LOCATION SHARING API METHODS =====
+
+  // Update location sharing permissions
+  updateLocationSharing: async (friendId, canSeeLocation, canSeeHistory, expiresAt) => {
+    try {
+      const response = await api.post('/location/sharing', {
+        friendId,
+        canSeeLocation,
+        canSeeHistory,
+        expiresAt
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error updating location sharing:', error);
+      throw error;
+    }
+  },
+
+  // Get location sharing settings
+  getLocationSharing: async () => {
+    try {
+      const response = await api.get('/location/sharing');
+      return response.data;
+    } catch (error) {
+      console.error('Error getting location sharing:', error);
       throw error;
     }
   },
