@@ -218,8 +218,8 @@ const Collections = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#e9e1cc]">
-      <header className="bg-[#f2ede1] shadow">
+    <div className="min-h-screen bg-gray-50">
+      <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <h1 className="text-3xl font-bold text-gray-900">Collections</h1>
@@ -229,6 +229,7 @@ const Collections = () => {
                 disabled={loading}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium disabled:opacity-50 flex items-center space-x-2"
               >
+
                 {loading ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
