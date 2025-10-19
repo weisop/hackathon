@@ -7,11 +7,13 @@ export default function CelebrationModal({ isOpen, onClose, locationName, achiev
   const [showConfetti, setShowConfetti] = useState(false);
   const [animationStep, setAnimationStep] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
+  const [hasBeenShown, setHasBeenShown] = useState(false);
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !hasBeenShown) {
       setShowConfetti(true);
       setAnimationStep(0);
+      setHasBeenShown(true);
       
       // Trigger confetti animation
       setTimeout(() => setAnimationStep(1), 100);
@@ -21,7 +23,7 @@ export default function CelebrationModal({ isOpen, onClose, locationName, achiev
       // Save achievement to database
       saveAchievement();
     }
-  }, [isOpen]);
+  }, [isOpen, hasBeenShown]);
 
   const saveAchievement = async () => {
     if (!achievementData) return;
@@ -51,7 +53,7 @@ export default function CelebrationModal({ isOpen, onClose, locationName, achiev
     }
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || hasBeenShown) return null;
 
   const handleClose = () => {
     setShowConfetti(false);

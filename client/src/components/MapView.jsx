@@ -100,6 +100,16 @@ export default function MapView({
   const [sessionId, setSessionId] = useState(null);
   const [showCelebration, setShowCelebration] = useState(false);
   const [achievementData, setAchievementData] = useState(null);
+  const [shownAchievements, setShownAchievements] = useState(() => {
+    // Load shown achievements from localStorage on component mount
+    try {
+      const saved = localStorage.getItem('shownAchievements');
+      return saved ? new Set(JSON.parse(saved)) : new Set();
+    } catch (error) {
+      console.warn('Failed to load shown achievements from localStorage:', error);
+      return new Set();
+    }
+  });
   
   const watchIdRef = useRef(null);
   const startTimeRef = useRef(null);
@@ -195,12 +205,33 @@ export default function MapView({
   }, [sessionId]);
 
   const handleAchievementComplete = (achievement) => {
+    // Create a unique key for this achievement
+    const achievementKey = `${achievement.locationName}-${achievement.level || 1}-${Math.floor(Date.now() / 1000)}`;
+    
+    // Check if this achievement has already been shown
+    if (shownAchievements.has(achievementKey)) {
+      console.log('🎉 Achievement already shown, skipping:', achievementKey);
+      return;
+    }
+    
     console.log('🎉 Achievement completed!', achievement);
     setAchievementData(achievement);
     setShowCelebration(true);
+    
+    // Mark this achievement as shown
+    setShownAchievements(prev => new Set([...prev, achievementKey]));
   };
 
   const handleLevelComplete = (levelData) => {
+    // Create a unique key for this level achievement
+    const achievementKey = `${levelData.locationName}-level-${levelData.level}-${Math.floor(Date.now() / 1000)}`;
+    
+    // Check if this achievement has already been shown
+    if (shownAchievements.has(achievementKey)) {
+      console.log('🎉 Level achievement already shown, skipping:', achievementKey);
+      return;
+    }
+    
     console.log('🎉 Level completed!', levelData);
     setAchievementData({
       locationName: levelData.locationName,
@@ -210,6 +241,9 @@ export default function MapView({
       level: levelData.level
     });
     setShowCelebration(true);
+    
+    // Mark this achievement as shown
+    setShownAchievements(prev => new Set([...prev, achievementKey]));
   };
 
   const handleLevelAdvancement = (levelData) => {
@@ -218,6 +252,21 @@ export default function MapView({
     setShowCelebration(false);
     setAchievementData(null);
   };
+
+  // Function to clear shown achievements (for testing purposes)
+  const clearShownAchievements = () => {
+    setShownAchievements(new Set());
+    localStorage.removeItem('shownAchievements');
+    console.log('🧹 Cleared shown achievements');
+  };
+
+  // Expose clear function to window for testing
+  useEffect(() => {
+    window.clearShownAchievements = clearShownAchievements;
+    return () => {
+      delete window.clearShownAchievements;
+    };
+  }, []);
 
   // Check if user is near any building markers
   const checkProximityToBuildings = useCallback((userLat, userLng) => {
@@ -473,6 +522,15 @@ export default function MapView({
       if (interval) clearInterval(interval);
     };
   }, [locationStartTime]);
+
+  // Save shown achievements to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem('shownAchievements', JSON.stringify([...shownAchievements]));
+    } catch (error) {
+      console.warn('Failed to save shown achievements to localStorage:', error);
+    }
+  }, [shownAchievements]);
 
   // Start/stop location tracking
   const toggleTracking = () => {
