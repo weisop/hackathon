@@ -18,6 +18,12 @@ const Collections = () => {
         ]);
         
         console.log('📊 Fetched achievements:', { regularAchievements, levelAchievements });
+        console.log('📊 Level achievements details:', levelAchievements.map(a => ({
+          location_name: a.location_name,
+          level: a.level,
+          required_time_hours: a.required_time_hours,
+          achieved_time_hours: a.achieved_time_hours
+        })));
         
         // Combine and format achievements
         const allAchievements = [
@@ -30,7 +36,8 @@ const Collections = () => {
             ...achievement,
             type: 'level',
             target_hours: achievement.required_time_hours,
-            achieved_hours: achievement.achieved_time_hours
+            achieved_hours: achievement.achieved_time_hours,
+            level: achievement.level
           }))
         ];
         
@@ -110,6 +117,21 @@ const Collections = () => {
     }
   };
 
+  const formatTimeDetailed = (hours) => {
+    if (hours < 1) {
+      const minutes = Math.floor(hours * 60);
+      const seconds = Math.floor((hours * 60 - minutes) * 60);
+      if (seconds > 0) {
+        return `${minutes}m ${seconds}s`;
+      }
+      return `${minutes}m`;
+    } else {
+      const wholeHours = Math.floor(hours);
+      const minutes = Math.floor((hours - wholeHours) * 60);
+      return minutes > 0 ? `${wholeHours}h ${minutes}m` : `${wholeHours}h`;
+    }
+  };
+
   const getLevelTitle = (level) => {
     const titles = {
       1: 'Novice',
@@ -152,6 +174,12 @@ const Collections = () => {
       ]);
       
       console.log('📊 Refreshed achievements:', { regularAchievements, levelAchievements });
+      console.log('📊 Refreshed level achievements details:', levelAchievements.map(a => ({
+        location_name: a.location_name,
+        level: a.level,
+        required_time_hours: a.required_time_hours,
+        achieved_time_hours: a.achieved_time_hours
+      })));
       
       // Combine and format achievements
       const allAchievements = [
@@ -164,7 +192,8 @@ const Collections = () => {
           ...achievement,
           type: 'level',
           target_hours: achievement.required_time_hours,
-          achieved_hours: achievement.achieved_time_hours
+          achieved_hours: achievement.achieved_time_hours,
+          level: achievement.level
         }))
       ];
       
@@ -296,6 +325,12 @@ const Collections = () => {
                           <span className="text-gray-600">Achieved:</span>
                           <span className="font-medium text-primary-600">{formatTime(achievement.achieved_hours)}</span>
                         </div>
+                        {achievement.type === 'level' && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-600">Level:</span>
+                            <span className="font-medium text-green-600">Level {achievement.level}</span>
+                          </div>
+                        )}
                         <div className="flex justify-between text-sm">
                           <span className="text-gray-600">Date:</span>
                           <span className="font-medium">{formatDate(achievement.achievement_date)}</span>
