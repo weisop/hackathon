@@ -123,3 +123,5 @@ const AIInsightsDashboard = ({ userData, locationData }) => {
 };
 
 export default AIInsightsDashboard;
+
+

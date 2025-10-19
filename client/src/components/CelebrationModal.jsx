@@ -178,3 +178,5 @@ export default function CelebrationModal({ isOpen, onClose, locationName, achiev
     </div>
   );
 }
+
+

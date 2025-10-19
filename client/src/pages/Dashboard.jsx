@@ -13,6 +13,7 @@ const Dashboard = () => {
   const { user, signOut } = useAuth();
   const [serverStatus, setServerStatus] = useState('unknown');
   const [showFriends, setShowFriends] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   // Friends functionality temporarily disabled
   // const [showDebugger, setShowDebugger] = useState(false);
   
@@ -89,6 +90,10 @@ const Dashboard = () => {
     console.log('Location updated:', location);
   };
 
+  const togglePause = () => {
+    setIsPaused(!isPaused);
+  };
+
   return (
     <div className="min-h-screen bg-[#e9e1cc] p-4">
       {/* Header */}
@@ -104,6 +109,16 @@ const Dashboard = () => {
                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium"
               >
                 {showFriends ? 'Hide Friends' : 'Show Friends'}
+              </button>
+              <button
+                onClick={togglePause}
+                className={`px-4 py-2 rounded-md text-sm font-medium ${
+                  isPaused 
+                    ? 'bg-green-600 hover:bg-green-700 text-white' 
+                    : 'bg-red-600 hover:bg-red-700 text-white'
+                }`}
+              >
+                {isPaused ? '▶️ Resume' : '⏸️ Pause'}
               </button>
               {/* Friends functionality temporarily disabled */}
               {/* <button
@@ -123,11 +138,17 @@ const Dashboard = () => {
           <div className="px-4 py-5 sm:p-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold text-gray-900">Location Tracking</h2>
+              <div className="flex items-center space-x-2">
+                <span className={`text-sm font-medium ${isPaused ? 'text-red-600' : 'text-green-600'}`}>
+                  {isPaused ? '⏸️ Paused' : '▶️ Active'}
+                </span>
+              </div>
             </div>
             <MapView
               height="500px"
               onLocationUpdate={handleLocationUpdate}
               markers={allDemoMarkers}
+              isPaused={isPaused}
             />
           </div>
         </div>

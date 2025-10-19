@@ -88,3 +88,5 @@ const AILocationRecommendations = ({ userHistory, currentLocation }) => {
 };
 
 export default AILocationRecommendations;
+
+
