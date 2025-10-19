@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { signIn as supabaseSignIn, signUp as supabaseSignUp, signOut as supabaseSignOut, getCurrentUser } from '../lib/supabase';
+import { signIn as supabaseSignIn, signUp as supabaseSignUp, signOut as supabaseSignOut, getCurrentUser, supabase } from '../lib/supabase';
 
 // Helper function to extract first name from user data
 const extractFirstName = (user) => {
@@ -58,6 +58,13 @@ export const AuthProvider = ({ children }) => {
             firstName: extractFirstName(user)
           };
           setUser(userWithFirstName);
+          
+          // Store Supabase session token for API calls
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.access_token) {
+            localStorage.setItem('token', session.access_token);
+          }
+          
           setLoading(false);
           return;
         }
@@ -87,6 +94,19 @@ export const AuthProvider = ({ children }) => {
     };
 
     checkAuth();
+    
+    // Listen for Supabase auth state changes
+    if (supabase) {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+        if (event === 'SIGNED_IN' && session?.access_token) {
+          localStorage.setItem('token', session.access_token);
+        } else if (event === 'SIGNED_OUT') {
+          localStorage.removeItem('token');
+        }
+      });
+      
+      return () => subscription.unsubscribe();
+    }
   }, []);
 
   const signIn = async (email, password) => {
@@ -99,6 +119,12 @@ export const AuthProvider = ({ children }) => {
           firstName: extractFirstName(data.user)
         };
         setUser(userWithFirstName);
+        
+        // Store Supabase session token for API calls
+        if (data.session?.access_token) {
+          localStorage.setItem('token', data.session.access_token);
+        }
+        
         return { success: true };
       }
       
@@ -170,6 +196,7 @@ export const AuthProvider = ({ children }) => {
     
     // Always clear local state
     localStorage.removeItem('auth_token');
+    localStorage.removeItem('token');
     setUser(null);
   };
 

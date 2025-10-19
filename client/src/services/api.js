@@ -28,12 +28,19 @@ const api = axios.create({
   timeout: API_CONFIG.timeout,
 });
 
-// Add request interceptor to handle dynamic URL updates
+// Add request interceptor to handle dynamic URL updates and authentication
 api.interceptors.request.use(async (config) => {
   // Update base URL if needed
   if (config.baseURL !== API_BASE_URL) {
     config.baseURL = API_BASE_URL;
   }
+  
+  // Add authentication token if available
+  const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  
   return config;
 });
 
