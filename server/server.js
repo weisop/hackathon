@@ -1002,6 +1002,32 @@ app.get('/api/location-levels/achievements', requireAuth, async (req, res) => {
   }
 });
 
+// Reset user level to 1
+app.post('/api/location-levels/:locationId/reset', requireAuth, async (req, res) => {
+  try {
+    const { locationId } = req.params;
+    const { locationName } = req.body;
+
+    const { data: resetLevel, error } = await supabase
+      .from('location_levels')
+      .update({
+        current_level: 1,
+        total_time_spent_seconds: 0,
+        updated_at: new Date().toISOString()
+      })
+      .eq('user_id', req.user.id)
+      .eq('location_id', locationId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    res.json({ message: 'Level reset to 1', level: resetLevel });
+  } catch (error) {
+    console.error('Error resetting level:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);

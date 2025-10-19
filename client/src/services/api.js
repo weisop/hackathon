@@ -502,6 +502,19 @@ export const apiService = {
         throw error;
       }
     },
+
+    // Reset user level to 1
+    resetUserLevel: async (locationId, locationName) => {
+      try {
+        const response = await api.post(`/location-levels/${locationId}/reset`, {
+          locationName
+        });
+        return response.data;
+      } catch (error) {
+        console.error('Error resetting user level:', error);
+        throw error;
+      }
+    },
 };
 
 export default apiService;
