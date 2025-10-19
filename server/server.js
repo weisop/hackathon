@@ -563,7 +563,7 @@ app.post('/api/location/track', requireAuth, async (req, res) => {
     
     if (error) {
       // If table doesn't exist or other database error, return success but with warning
-      if (error.code === 'PGRST116' || error.message.includes('relation "location_tracks" does not exist')) {
+      if (error.code === 'PGRST116' || (error.message && error.message.includes('relation "location_tracks" does not exist'))) {
         console.warn('⚠️ location_tracks table does not exist, location tracking disabled');
         return res.json({ 
           message: 'Location received (tracking disabled)', 
