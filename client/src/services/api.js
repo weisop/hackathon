@@ -302,7 +302,7 @@ export const apiService = {
       const response = await api.post('/location/track', locationData);
       return response.data;
     } catch (error) {
-      console.error('Error tracking location:', error);
+      // Don't log as error since the MapView component handles this gracefully
       throw error;
     }
   },

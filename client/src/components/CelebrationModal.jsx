@@ -98,10 +98,10 @@ export default function CelebrationModal({ isOpen, onClose, locationName, achiev
             🎉
           </div>
           <h2 className="text-2xl font-bold text-white mb-2">
-            Achievement Unlocked!
+            Territory Conquered!
           </h2>
           <p className="text-yellow-100">
-            You've reached your goal at {locationName}!
+            You have successfully claimed {locationName} as your domain!
           </p>
         </div>
 
@@ -110,10 +110,10 @@ export default function CelebrationModal({ isOpen, onClose, locationName, achiev
           <div className="mb-6">
             <div className="text-4xl mb-4">🏆</div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              Location Master
+              🏰 Lord of {locationName}
             </h3>
             <p className="text-gray-600">
-              You've spent enough time at <strong>{locationName}</strong> to earn this achievement!
+              Through your dedication and perseverance, you have conquered <strong>{locationName}</strong> and established your dominion over this territory!
             </p>
           </div>
 
@@ -122,11 +122,11 @@ export default function CelebrationModal({ isOpen, onClose, locationName, achiev
             <div className="bg-gray-50 rounded-lg p-4 mb-6">
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <div className="text-gray-600">Target Time</div>
+                  <div className="text-gray-600">Required Siege Time</div>
                   <div className="font-semibold">{achievementData.targetHours}h</div>
                 </div>
                 <div>
-                  <div className="text-gray-600">Time Spent</div>
+                  <div className="text-gray-600">Time Conquered</div>
                   <div className="font-semibold text-green-600">{achievementData.achievedHours}h</div>
                 </div>
               </div>
@@ -136,7 +136,7 @@ export default function CelebrationModal({ isOpen, onClose, locationName, achiev
           {/* Progress Bar */}
           <div className="mb-6">
             <div className="flex justify-between text-sm text-gray-600 mb-2">
-              <span>Progress</span>
+              <span>Conquest Progress</span>
               <span>100%</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-3">
@@ -150,7 +150,7 @@ export default function CelebrationModal({ isOpen, onClose, locationName, achiev
               onClick={handleClose}
               className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium transition-colors"
             >
-              Continue
+              Continue Conquest
             </button>
             <button
               onClick={() => {
@@ -164,7 +164,7 @@ export default function CelebrationModal({ isOpen, onClose, locationName, achiev
               }}
               className="flex-1 bg-gradient-to-r from-yellow-400 to-red-500 hover:from-yellow-500 hover:to-red-600 text-white px-4 py-2 rounded-lg font-medium transition-all transform hover:scale-105"
             >
-              View Collections
+              View Conquered Territories
             </button>
           </div>
         </div>

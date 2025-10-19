@@ -5,8 +5,10 @@ import MapView from '../components/MapView';
 import FriendsList from '../components/FriendsList';
 // Friends functionality temporarily disabled
 // import FriendsDebugger from '../components/FriendsDebugger';
-import DatabaseDebugger from '../components/DatabaseDebugger';
-import ApiDebugger from '../components/ApiDebugger';
+import AILocationRecommendations from '../components/AILocationRecommendations';
+import AILocationDescription from '../components/AILocationDescription';
+import AIInsightsDashboard from '../components/AIInsightsDashboard';
+import SmartNotifications from '../components/SmartNotifications';
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
@@ -14,7 +16,26 @@ const Dashboard = () => {
   const [showFriends, setShowFriends] = useState(false);
   // Friends functionality temporarily disabled
   // const [showDebugger, setShowDebugger] = useState(false);
-  const [showDatabaseDebugger, setShowDatabaseDebugger] = useState(false);
+  
+  // AI Features State
+  const [currentLocation, setCurrentLocation] = useState('HUB');
+  const [userLevel, setUserLevel] = useState(1);
+  const [userHistory, setUserHistory] = useState([
+    { locationName: 'Library', timeSpent: 45, visits: 3 },
+    { locationName: 'HUB', timeSpent: 30, visits: 2 },
+    { locationName: 'Gym', timeSpent: 60, visits: 1 }
+  ]);
+  const [userData, setUserData] = useState({
+    totalTime: 135, // minutes
+    totalVisits: 6,
+    favoriteLocation: 'Library',
+    currentLevel: 1,
+    visitPatterns: 'Morning study sessions'
+  });
+  const [locationData, setLocationData] = useState({
+    mostVisited: 'Library',
+    peakHours: '9-11 AM'
+  });
   const [userLocation, setUserLocation] = useState(null);
   // Demo markers for testing marker rendering on the map
   // Coordinates provided by user (first converted from DMS to decimal):
@@ -92,12 +113,6 @@ const Dashboard = () => {
               >
                 {showDebugger ? 'Hide Debugger' : '🔧 Debug Friends'}
               </button> */}
-              <button
-                onClick={() => setShowDatabaseDebugger(!showDatabaseDebugger)}
-                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium"
-              >
-                {showDatabaseDebugger ? 'Hide DB Debug' : '🗄️ Debug Database'}
-              </button>
               <span className="text-sm text-gray-700">Welcome, {user?.firstName || user?.name || 'User'}!</span>
             </div>
           </div>
@@ -115,6 +130,44 @@ const Dashboard = () => {
             onLocationUpdate={handleLocationUpdate}
             markers={allDemoMarkers}
           />
+        </div>
+      </div>
+
+      {/* AI Features Section */}
+      <div className="bg-white shadow mb-6">
+        <div className="px-4 py-5 sm:p-6">
+          <div className="text-center mb-6">
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">🧠 AI-Powered Campus Intelligence</h2>
+            <p className="text-gray-600">Discover personalized insights and recommendations powered by Gemini AI</p>
+          </div>
+
+          <div className="space-y-6">
+            {/* AI Location Description */}
+            <AILocationDescription 
+              locationName={currentLocation}
+              userLevel={userLevel}
+              isVisible={true}
+            />
+
+            {/* AI Location Recommendations */}
+            <AILocationRecommendations 
+              userHistory={userHistory}
+              currentLocation={currentLocation}
+            />
+
+            {/* AI Insights Dashboard */}
+            <AIInsightsDashboard 
+              userData={userData}
+              locationData={locationData}
+            />
+
+            {/* Smart Notifications */}
+            <SmartNotifications 
+              currentLocation={currentLocation}
+              userLevel={userLevel}
+              isVisible={true}
+            />
+          </div>
         </div>
       </div>
 
@@ -159,28 +212,7 @@ const Dashboard = () => {
         </div>
       )} */}
 
-      {/* Database Debugger Modal */}
-      {showDatabaseDebugger && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg max-w-6xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center p-6 border-b">
-              <h2 className="text-xl font-semibold text-gray-900">🗄️ Database Debugger</h2>
-              <button
-                onClick={() => setShowDatabaseDebugger(false)}
-                className="text-gray-500 hover:text-gray-700 text-2xl"
-              >
-                ×
-              </button>
-            </div>
-            <div className="p-6">
-              <DatabaseDebugger />
-            </div>
-          </div>
-        </div>
-      )}
 
-      {/* API Debugger */}
-      <ApiDebugger />
     </div>
   );
 };
