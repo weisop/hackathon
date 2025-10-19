@@ -37,6 +37,7 @@ body {
   min-height: 100vh;
   background: linear-gradient(135deg, #1c1917 0%, #292524 50%, #44403c 100%);
   background-attachment: fixed;
+  /* cursor: url('/cursor.png'), auto !important; */
 }
 
 h1 {
@@ -84,4 +85,14 @@ button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
   transform: none;
+}
+
+Custom cursor for everything
+html, body,
+.leaflet-container,
+.leaflet-grab,
+.leaflet-interactive,
+.leaflet-marker-icon,
+.leaflet-marker-shadow {
+  cursor: url('/cursor.png') 8 13, crosshair !important;
 }

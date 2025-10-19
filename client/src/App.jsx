@@ -25,13 +25,18 @@ function AppContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#E8DFC9]">
       {/* Navigation */}
-      <nav className="bg-white shadow">
+      <nav className="bg-[#E8DFC9] shadow mb-6">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex">
-              <div className="flex-shrink-0 flex items-center">
+          <div className="flex justify-between items-center py-3">
+            <div className="flex items-center space-x-6">
+              <div className="flex items-center space-x-3">
+                 <img
+                    src="/logo.png"
+                    alt="ConQuest Logo"
+                    className="h-20 w-20 rounded-md shadow-sm"
+                  />
                 <h1 className="text-xl font-bold text-gray-900">ConQuest</h1>
               </div>
               <div className="hidden sm:ml-6 sm:flex sm:space-x-8">

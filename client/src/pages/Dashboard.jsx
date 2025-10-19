@@ -63,9 +63,9 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#e9e1cc] p-4">
       {/* Header */}
-      <header className="bg-white shadow">
+      <header className="bg-[#e9e1cc] shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div className="flex items-center">
@@ -85,7 +85,7 @@ const Dashboard = () => {
       </header>
 
       {/* Map Section */}
-      <div className="bg-white shadow mb-6">
+      <div className="bg-[#f2ede1] shadow mb-6">
         <div className="px-4 py-5 sm:p-6">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold text-gray-900">Location Tracking</h2>

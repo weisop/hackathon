@@ -3,7 +3,15 @@ import { MapContainer, TileLayer, Marker, Popup, useMap, Circle, Tooltip } from 
 import L from 'leaflet';
 import './MapView.css';
 import { apiService } from '../services/api';
+import 'leaflet.tilelayer.colorfilter';
 
+  const fantasyMapFilter = [
+  'hue: 275deg',      // purple hue shift
+  'saturate: 1.4',    // boost saturation
+  'contrast: 1.1',    // mild contrast
+  'brightness: 1.05', // slight brightness
+  'sepia: 0.25',      // yellow warmth
+];
 // Optional: custom icon fix for default markers in React
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -581,8 +589,8 @@ export default function MapView({
           style={{ height: '100%', width: '100%' }}
         >
           <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            url="https://tiles.stadiamaps.com/tiles/stamen_watercolor/{z}/{x}/{y}{r}.jpg"
+            attribution='&copy; <a href="https://stadiamaps.com/">Stadia Maps</a> | Map tiles by <a href="https://stamen.com/">Stamen Design</a>, under CC BY 3.0. Data by OpenStreetMap, under ODbL.'
           />
           
           {/* User's current location marker */}
