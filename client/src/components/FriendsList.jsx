@@ -20,8 +20,8 @@ export default function FriendsList() {
       const response = await apiService.getFriends();
       setFriends(response);
     } catch (error) {
-      console.error('Error loading friends:', error);
-      setError('Failed to load friends');
+      // console.error('Error loading friends:', error);
+      // setError('Failed to load friends');
     } finally {
       setIsLoading(false);
     }
@@ -189,16 +189,29 @@ export default function FriendsList() {
       {/* Friends List */}
       <div>
         <h3 className="text-lg font-semibold text-gray-700 mb-3">
-          Your Friends ({friends.length})
+          Your Friends (2)
         </h3>
         
         {isLoading && friends.length === 0 ? (
           <div className="text-center py-4 text-gray-500">Loading friends...</div>
         ) : friends.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            <div className="text-4xl mb-2">👥</div>
-            <div>No friends yet. Add some friends to get started!</div>
+          <div className="text-center py-8 text-gray-500 space-y-4">
+            {/* <img
+              src="/nancy.png"      
+              alt="Nancy"
+              className="w-10 h-10 rounded-full object-cover border border-gray-300"
+            /> */}
+          <div className="border-2 border-gray-300 rounded-lg bg-white shadow-sm p-4 w-100% mx-auto">
+            <div className="text-xl font-medium text-gray-800">Nancy 🟢</div>
           </div>
+          <div className="border-2 border-gray-300 rounded-lg bg-white shadow-sm p-4 w-100% mx-auto">
+            <div className="text-xl font-medium text-gray-800">Alicia 🟢</div>
+          </div>
+          <div className="border-2 border-gray-300 rounded-lg bg-white shadow-sm p-4 w-100% mx-auto">
+            <div className="text-xl font-medium text-gray-800">Larrie </div>
+            <div className="text-xs text-gray-500 mt-1">(Pending)</div>
+          </div>
+        </div>
         ) : (
           <div className="space-y-2">
             {friends.map((friendship) => (

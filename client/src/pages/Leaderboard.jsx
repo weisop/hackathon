@@ -6,7 +6,7 @@ const Leaderboard = () => {
   const [loading, setLoading] = useState(false);
   const [leaderboard, setLeaderboard] = useState([
     { id: 1, name: 'Alice', score: 1520 },
-    { id: 2, name: 'Bob', score: 1290 },
+    { id: 2, name: 'Nancy', score: 1290 },
     { id: 3, name: user?.name || 'You', score: 980 },
   ]);
 

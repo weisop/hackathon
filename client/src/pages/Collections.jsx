@@ -218,8 +218,8 @@ const Collections = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow">
+    <div className="min-h-screen bg-[#e9e1cc]">
+      <header className="bg-[#f2ede1] shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <h1 className="text-3xl font-bold text-gray-900">Collections</h1>
@@ -256,7 +256,7 @@ const Collections = () => {
         <div className="px-4 py-6 sm:px-0">
           <div className="bg-white shadow rounded-lg">
             <div className="px-4 py-5 sm:p-6">
-              <h2 className="text-lg font-medium text-gray-900 mb-6">Your Achievements</h2>
+              <h2 className="text-lg font-medium text-gray-900 mb-6">Conquered Achievements</h2>
               
               {loading ? (
                 <div className="flex justify-center items-center py-8">
