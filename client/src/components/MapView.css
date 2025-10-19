@@ -224,3 +224,24 @@
 .you-are-here-button div {
   animation: proximityPulse 2s infinite !important;
 }
+
+/* Backdrop helper used by Collections page */
+.collections-backdrop {
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  color: #efe4c2;
+}
+.collections-backdrop::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(12,12,12,0.45), rgba(12,12,12,0.55));
+  z-index: 0;
+}
+.collections-backdrop > * {
+  position: relative;
+  z-index: 1;
+}
