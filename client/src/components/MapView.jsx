@@ -111,7 +111,6 @@ export default function MapView({
     }
   });
   
-  const watchIdRef = useRef(null);
   const startTimeRef = useRef(null);
   const locationBufferRef = useRef([]);
 
@@ -524,17 +523,9 @@ export default function MapView({
     // Start tracking immediately when component mounts
     getCurrentLocation();
     startTimeRef.current = Date.now();
-
-    // Cleanup function to stop tracking when component unmounts
-    return () => {
-      if (watchIdRef.current) {
-        navigator.geolocation.clearWatch(watchIdRef.current);
-        watchIdRef.current = null;
-      }
-    };
   }, []);
 
-  // Watch position for continuous tracking with precision
+  // Track position every 30 seconds with setInterval
   useEffect(() => {
     const options = {
       enableHighAccuracy: true,
@@ -542,7 +533,8 @@ export default function MapView({
       maximumAge: 10000
     };
     
-    watchIdRef.current = navigator.geolocation.watchPosition(
+    const trackLocation = () => {
+      navigator.geolocation.getCurrentPosition(
         (position) => {
           const location = {
             latitude: position.coords.latitude,
@@ -598,14 +590,18 @@ export default function MapView({
         },
         options
       );
-
-    return () => {
-      if (watchIdRef.current) {
-        navigator.geolocation.clearWatch(watchIdRef.current);
-        watchIdRef.current = null;
-      }
     };
-  }, [smoothLocation, onLocationUpdate]);
+
+    // Track location immediately
+    trackLocation();
+    
+    // Set up interval to track every 30 seconds
+    const intervalId = setInterval(trackLocation, 30000);
+    
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [smoothLocation, onLocationUpdate, sessionId, nearbyBuilding, googleMapsConfigured]);
 
   return (
     <div className="map-container relative">
