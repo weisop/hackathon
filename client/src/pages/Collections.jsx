@@ -68,6 +68,29 @@ const Collections = () => {
     fetchAchievements();
   }, []);
 
+  // Auto-refresh achievements when page becomes visible (user navigates back)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        console.log('🔄 Page became visible, refreshing achievements...');
+        refreshAchievements();
+      }
+    };
+
+    const handleRefreshCollections = () => {
+      console.log('🔄 Refresh collections event received, refreshing achievements...');
+      refreshAchievements();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('refreshCollections', handleRefreshCollections);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('refreshCollections', handleRefreshCollections);
+    };
+  }, []);
+
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -112,8 +135,30 @@ const Collections = () => {
   const refreshAchievements = async () => {
     try {
       setLoading(true);
-      const data = await apiService.getLocationAchievements();
-      setAchievements(data || []);
+      // Fetch both regular achievements and level achievements
+      const [regularAchievements, levelAchievements] = await Promise.all([
+        apiService.getLocationAchievements().catch(() => []),
+        apiService.getLevelAchievements().catch(() => [])
+      ]);
+      
+      console.log('📊 Refreshed achievements:', { regularAchievements, levelAchievements });
+      
+      // Combine and format achievements
+      const allAchievements = [
+        ...regularAchievements.map(achievement => ({
+          ...achievement,
+          type: 'regular',
+          level: 1
+        })),
+        ...levelAchievements.map(achievement => ({
+          ...achievement,
+          type: 'level',
+          target_hours: achievement.required_time_hours,
+          achieved_hours: achievement.achieved_time_hours
+        }))
+      ];
+      
+      setAchievements(allAchievements);
     } catch (error) {
       console.error('Error refreshing achievements:', error);
     } finally {
@@ -143,9 +188,19 @@ const Collections = () => {
               <button
                 onClick={refreshAchievements}
                 disabled={loading}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium disabled:opacity-50"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium disabled:opacity-50 flex items-center space-x-2"
               >
-                {loading ? 'Refreshing...' : '🔄 Refresh'}
+                {loading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <span>Refreshing...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>🔄</span>
+                    <span>Refresh</span>
+                  </>
+                )}
               </button>
               <button
                 onClick={signOut}

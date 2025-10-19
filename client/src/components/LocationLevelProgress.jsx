@@ -12,6 +12,7 @@ const LocationLevelProgress = ({
   const [userLevel, setUserLevel] = useState(null);
   const [loading, setLoading] = useState(true);
   const [levelCompleted, setLevelCompleted] = useState(false);
+  const [canAdvance, setCanAdvance] = useState(false);
 
   useEffect(() => {
     if (isVisible && locationId) {
@@ -112,6 +113,9 @@ const LocationLevelProgress = ({
   const requiredTime = calculateLevelTime(currentLevel);
   const elapsedHours = elapsedTime / (1000 * 60 * 60);
   const progressPercentage = Math.min((elapsedHours / requiredTime) * 100, 100);
+  
+  // Check if level is truly complete (100% progress)
+  const isLevelFullyComplete = progressPercentage >= 100;
 
   const formatTime = (hours) => {
     if (hours < 1) {
@@ -177,7 +181,11 @@ const LocationLevelProgress = ({
         
         <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
           <div 
-            className={`h-3 rounded-full transition-all duration-500 ease-out ${getLevelColor(currentLevel)}`}
+            className={`h-3 rounded-full transition-all duration-500 ease-out ${
+              isLevelFullyComplete 
+                ? 'bg-gradient-to-r from-green-400 to-green-600 animate-pulse' 
+                : getLevelColor(currentLevel)
+            }`}
             style={{ width: `${progressPercentage}%` }}
           />
         </div>
@@ -185,7 +193,7 @@ const LocationLevelProgress = ({
         <div className="flex justify-between text-xs text-gray-500 mt-1">
           <span>{Math.round(progressPercentage)}% complete</span>
           <span>
-            {progressPercentage >= 100 
+            {isLevelFullyComplete 
               ? '🎉 Level Complete!' 
               : `${formatTime(requiredTime - elapsedHours)} remaining`
             }
@@ -193,8 +201,8 @@ const LocationLevelProgress = ({
         </div>
       </div>
 
-      {/* Level Completion */}
-      {levelCompleted && (
+      {/* Level Completion - Only show when progress is 100% */}
+      {isLevelFullyComplete && (
         <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg p-4 mb-3">
           <div className="text-center">
             <div className="text-xl font-bold text-green-800 mb-2 flex items-center justify-center space-x-2">
@@ -220,8 +228,8 @@ const LocationLevelProgress = ({
         </div>
       )}
 
-      {/* Next Level Preview */}
-      {!levelCompleted && (
+      {/* Next Level Preview - Only show when level is not complete */}
+      {!isLevelFullyComplete && (
         <div className="text-xs text-gray-500 text-center">
           Next level requires {formatTime(calculateLevelTime(currentLevel + 1))}
         </div>

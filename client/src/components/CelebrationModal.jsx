@@ -154,6 +154,11 @@ export default function CelebrationModal({ isOpen, onClose, locationName, achiev
               onClick={() => {
                 handleClose();
                 navigate('/collections');
+                
+                // Trigger a refresh of the collections page
+                setTimeout(() => {
+                  window.dispatchEvent(new CustomEvent('refreshCollections'));
+                }, 100);
               }}
               className="flex-1 bg-gradient-to-r from-yellow-400 to-red-500 hover:from-yellow-500 hover:to-red-600 text-white px-4 py-2 rounded-lg font-medium transition-all transform hover:scale-105"
             >
