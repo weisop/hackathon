@@ -208,7 +208,7 @@ export const apiService = {
     }
   },
 
-  // Check Google Maps API configuration
+  // Check API configuration
   checkLocationConfig: async () => {
     try {
       const response = await api.get('/location/config');

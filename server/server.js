@@ -352,13 +352,13 @@ app.post('/api/location/directions', async (req, res) => {
   }
 });
 
-// Check if Google Maps API is configured
+// Check if API is configured
 app.get('/api/location/config', (req, res) => {
   res.json({
     configured: locationService.isConfigured(),
     message: locationService.isConfigured() 
-      ? 'Google Maps API is configured' 
-      : 'Google Maps API key not configured. Please set GOOGLE_MAPS_API_KEY environment variable.'
+      ? 'API is configured' 
+      : 'API key not configured. Please set GOOGLE_MAPS_API_KEY environment variable.'
   });
 });
 

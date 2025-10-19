@@ -1,9 +1,9 @@
-// Enhanced Location Service with Google Maps Integration
+// Enhanced Location Service with API Integration
 const googlemaps = require('googlemaps');
 
 class LocationService {
   constructor() {
-    // Initialize Google Maps client with API key
+    // Initialize API client with API key
     this.gmaps = googlemaps({
       key: process.env.GOOGLE_MAPS_API_KEY || 'YOUR_API_KEY_HERE',
       stagger_time: 1000, // 1 second between requests
@@ -289,7 +289,7 @@ class LocationService {
     return parsed;
   }
 
-  // Validate if Google Maps API key is configured
+  // Validate if API key is configured
   isConfigured() {
     return process.env.GOOGLE_MAPS_API_KEY && process.env.GOOGLE_MAPS_API_KEY !== 'YOUR_API_KEY_HERE';
   }

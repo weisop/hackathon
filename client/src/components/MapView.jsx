@@ -265,7 +265,7 @@ export default function MapView({
     });
   }, []);
 
-  // Get enhanced location data from Google Maps
+  // Get enhanced location data
   const getEnhancedLocationData = useCallback(async (latitude, longitude) => {
     if (!googleMapsConfigured) return;
     
@@ -284,16 +284,12 @@ export default function MapView({
     }
   }, [googleMapsConfigured]);
 
-  // Check Google Maps API configuration
+  // Check API configuration
   const checkGoogleMapsConfig = useCallback(async () => {
     try {
       const config = await apiService.checkLocationConfig();
       setGoogleMapsConfigured(config.configured);
-      if (!config.configured) {
-        console.warn('⚠️ Google Maps API not configured:', config.message);
-      }
     } catch (error) {
-      console.warn('⚠️ Google Maps config check failed (optional):', error.message);
       setGoogleMapsConfigured(false);
     }
   }, []);
@@ -325,7 +321,7 @@ export default function MapView({
     }
   }, [enhancedLocationData]);
 
-  // Initialize Google Maps configuration check
+  // Initialize API configuration check
   useEffect(() => {
     checkGoogleMapsConfig();
   }, [checkGoogleMapsConfig]);
@@ -407,7 +403,7 @@ export default function MapView({
           updateTrackingStats(location);
           onLocationUpdate?.(smoothed);
           
-          // Get enhanced location data if Google Maps is configured
+          // Get enhanced location data if API is configured
           if (googleMapsConfigured) {
             getEnhancedLocationData(location.latitude, location.longitude);
           }
@@ -576,20 +572,6 @@ export default function MapView({
           </div>
         )}
 
-        {/* Google Maps Configuration Status */}
-        <div className="mb-4">
-          <div className={`px-3 py-2 rounded text-sm ${
-            googleMapsConfigured 
-              ? 'bg-green-100 text-green-800 border border-green-200' 
-              : 'bg-yellow-100 text-yellow-800 border border-yellow-200'
-          }`}>
-            {googleMapsConfigured ? (
-              '✅ Google Maps API configured - Enhanced features available'
-            ) : (
-              '⚠️ Google Maps API not configured - Basic location tracking only'
-            )}
-          </div>
-        </div>
       </div>
 
       <div style={{ height, width: '100%' }}>
