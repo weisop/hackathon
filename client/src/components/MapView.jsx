@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap, Circle } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap, Circle, Tooltip } from 'react-leaflet';
 import L from 'leaflet';
 import './MapView.css';
 import { apiService } from '../services/api';
@@ -18,14 +18,78 @@ L.Icon.Default.mergeOptions({
 // Component to update map center when user location changes
 const MapUpdater = ({ location }) => {
   const map = useMap();
-  
+  const markerRef = useRef(null);
+
   useEffect(() => {
+    if (!map) return;
+
     if (location) {
       map.setView([location.latitude, location.longitude], map.getZoom());
+
+      // Reuse a single marker instead of creating a new one each update
+      if (!markerRef.current) {
+        markerRef.current = L.marker([location.latitude, location.longitude]).addTo(map);
+      } else {
+        markerRef.current.setLatLng([location.latitude, location.longitude]);
+      }
+
+      markerRef.current.bindPopup("📍 You are here").openPopup();
     }
+
+    return () => {
+      // Clean up marker when component unmounts
+      if (markerRef.current) {
+        try {
+          map.removeLayer(markerRef.current);
+        } catch (e) {
+          // ignore if already removed
+        }
+        markerRef.current = null;
+      }
+    };
   }, [location, map]);
-  
+
   return null;
+};
+
+// Component to fit map bounds to markers and user location
+const FitBounds = ({ markers = [], userLocation }) => {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!map) return;
+
+    const points = [];
+    if (Array.isArray(markers)) {
+      markers.forEach(m => {
+        if (m && typeof m.latitude === 'number' && typeof m.longitude === 'number') {
+          points.push([m.latitude, m.longitude]);
+        }
+      });
+    }
+
+    if (userLocation && typeof userLocation.latitude === 'number' && typeof userLocation.longitude === 'number') {
+      points.push([userLocation.latitude, userLocation.longitude]);
+    }
+
+    if (points.length === 0) return;
+
+    try {
+      const bounds = L.latLngBounds(points);
+      map.fitBounds(bounds, { padding: [40, 40], maxZoom: 16 });
+    } catch (e) {
+      // ignore
+    }
+  }, [map, markers, userLocation]);
+
+  return null;
+};
+
+// Return a divIcon based on type (coffee / library / default)
+const getMarkerIcon = (type, size = 28) => {
+  const emoji = type === 'library' ? '📚' : (type === 'coffee' ? '☕' : '📍');
+  const html = `<div style="display:flex;align-items:center;justify-content:center;width:${size}px;height:${size}px;border-radius:50%;background:#ffffff;border:2px solid rgba(0,0,0,0.08);box-shadow:0 1px 3px rgba(0,0,0,0.2);font-size:${Math.floor(size*0.6)}px">${emoji}</div>`;
+  return L.divIcon({ html, className: 'custom-emoji-icon', iconSize: [size, size], iconAnchor: [size/2, size/2] });
 };
 
 export default function MapView({ 
@@ -34,6 +98,7 @@ export default function MapView({
   height = "400px",
   showUserLocation = true,
   onLocationUpdate = null
+  , markers = []
 }) {
   const [userLocation, setUserLocation] = useState(null);
   const [locationHistory, setLocationHistory] = useState([]);
@@ -454,11 +519,16 @@ export default function MapView({
                 position={[userLocation.latitude, userLocation.longitude]}
                 icon={L.divIcon({
                   className: 'user-location-marker',
-                  html: `<div class="w-4 h-4 bg-blue-500 rounded-full border-2 border-white shadow-lg ${userLocation.smoothed ? 'ring-2 ring-green-400' : ''}"></div>`,
+                  html: `
+                    <div style="width:16px;height:16px;background:#3B82F6;border-radius:50%;border:2px solid white;box-shadow:0 0 6px rgba(59,130,246,0.6);${userLocation.smoothed ? 'box-shadow:0 0 8px rgba(34,197,94,0.7);' : ''}"></div>
+                  `,
                   iconSize: [16, 16],
                   iconAnchor: [8, 8]
                 })}
               >
+                <Tooltip permanent direction="top" className="map-tooltip">
+                  {userLocation.name ?? 'You'}
+                </Tooltip>
                 <Popup>
                   <div>
                     <strong>Your Location</strong>
@@ -486,11 +556,15 @@ export default function MapView({
               position={[location.latitude, location.longitude]}
               icon={L.divIcon({
                 className: 'history-marker',
-                html: `<div class="w-2 h-2 bg-green-500 rounded-full opacity-${Math.max(20, 100 - index * 2)}" title="Point ${index + 1}"></div>`,
+                html: `
+                  <div title="Point ${index + 1}" style="width:8px;height:8px;background:#10B981;border-radius:50%;opacity:${(Math.max(20, 100 - index * 2)/100).toFixed(2)};">
+                  </div>
+                `,
                 iconSize: [8, 8],
                 iconAnchor: [4, 4]
               })}
             >
+              <Tooltip permanent direction="top" className="map-tooltip">{location.name ?? `Point ${index + 1}`}</Tooltip>
               <Popup>
                 <div>
                   <strong>History Point {index + 1}</strong>
@@ -507,6 +581,33 @@ export default function MapView({
               </Popup>
             </Marker>
           ))}
+
+          {/* External markers passed via props */}
+          {Array.isArray(markers) && markers.map((m, idx) => (
+            <Marker
+              key={m.id ?? idx}
+              position={[m.latitude, m.longitude]}
+              icon={getMarkerIcon(
+                // crude type detection: library if name contains 'Library' or 'Library' keywords
+                (/library|library|library/i.test(m.name) || /Library/.test(m.name)) ? 'library' : (/cafe|coffee|starbucks|bagel|boba|snooze|toast|cafe|coffeemaker|coffee/i.test(m.name) ? 'coffee' : 'default')
+              )}
+            >
+              <Tooltip permanent direction="top" className="map-tooltip">{m.name ?? `Marker ${idx + 1}`}</Tooltip>
+              <Popup>
+                <div>
+                  <strong>{m.name ?? `Marker ${idx + 1}`}</strong>
+                  <br />
+                  Lat: {m.latitude.toFixed(8)}
+                  <br />
+                  Lng: {m.longitude.toFixed(8)}
+                  {m.description && <><br />{m.description}</>}
+                </div>
+              </Popup>
+            </Marker>
+          ))}
+
+          {/* Auto-fit bounds to show all markers */}
+          <FitBounds markers={markers} userLocation={userLocation} />
 
           <MapUpdater location={userLocation} />
         </MapContainer>
