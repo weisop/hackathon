@@ -2,8 +2,7 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
 const { requireAuth, optionalAuth, getUserById, createUserProfile, updateUserProfile, supabase } = require('./services/supabaseAuth');
-const portFinder = require('./utils/portFinder');
-const sharedPortConfig = require('../shared-config/portConfig');
+const locationService = require('./services/locationService');
 
 const app = express();
 
@@ -246,6 +245,119 @@ app.delete('/api/items/:id', requireAuth, (req, res) => {
   
   const deletedItem = items.splice(itemIndex, 1)[0];
   res.json({ message: 'Item deleted successfully', item: deletedItem });
+});
+
+// Enhanced Location API endpoints
+// Get enhanced location data (geocoding + nearby places)
+app.post('/api/location/enhanced', async (req, res) => {
+  try {
+    const { latitude, longitude } = req.body;
+    
+    if (!latitude || !longitude) {
+      return res.status(400).json({ error: 'Latitude and longitude are required' });
+    }
+
+    const enhancedData = await locationService.getEnhancedLocationData(latitude, longitude);
+    res.json(enhancedData);
+  } catch (error) {
+    console.error('Enhanced location error:', error);
+    res.status(500).json({ error: 'Failed to get enhanced location data' });
+  }
+});
+
+// Geocode coordinates to address
+app.post('/api/location/geocode', async (req, res) => {
+  try {
+    const { latitude, longitude } = req.body;
+    
+    if (!latitude || !longitude) {
+      return res.status(400).json({ error: 'Latitude and longitude are required' });
+    }
+
+    const geocodeResult = await locationService.geocodeLocation(latitude, longitude);
+    res.json(geocodeResult);
+  } catch (error) {
+    console.error('Geocoding error:', error);
+    res.status(500).json({ error: 'Failed to geocode location' });
+  }
+});
+
+// Get nearby places
+app.post('/api/location/nearby', async (req, res) => {
+  try {
+    const { latitude, longitude, radius = 1000, type = 'establishment' } = req.body;
+    
+    if (!latitude || !longitude) {
+      return res.status(400).json({ error: 'Latitude and longitude are required' });
+    }
+
+    const nearbyResult = await locationService.getNearbyPlaces(latitude, longitude, radius, type);
+    res.json(nearbyResult);
+  } catch (error) {
+    console.error('Nearby places error:', error);
+    res.status(500).json({ error: 'Failed to get nearby places' });
+  }
+});
+
+// Get place details
+app.get('/api/location/place/:placeId', async (req, res) => {
+  try {
+    const { placeId } = req.params;
+    
+    if (!placeId) {
+      return res.status(400).json({ error: 'Place ID is required' });
+    }
+
+    const placeDetails = await locationService.getPlaceDetails(placeId);
+    res.json(placeDetails);
+  } catch (error) {
+    console.error('Place details error:', error);
+    res.status(500).json({ error: 'Failed to get place details' });
+  }
+});
+
+// Calculate distance between two points
+app.post('/api/location/distance', async (req, res) => {
+  try {
+    const { origin, destination, mode = 'driving' } = req.body;
+    
+    if (!origin || !destination) {
+      return res.status(400).json({ error: 'Origin and destination are required' });
+    }
+
+    const distanceResult = await locationService.getDistanceMatrix(origin, destination, mode);
+    res.json(distanceResult);
+  } catch (error) {
+    console.error('Distance calculation error:', error);
+    res.status(500).json({ error: 'Failed to calculate distance' });
+  }
+});
+
+// Get directions between two points
+app.post('/api/location/directions', async (req, res) => {
+  try {
+    const { origin, destination, mode = 'driving' } = req.body;
+    
+    if (!origin || !destination) {
+      return res.status(400).json({ error: 'Origin and destination are required' });
+    }
+
+    const directionsResult = await locationService.getDirections(origin, destination, mode);
+    res.json(directionsResult);
+  } catch (error) {
+    console.error('Directions error:', error);
+    res.status(500).json({ error: 'Failed to get directions' });
+  }
+});
+
+// Check if Google Maps API is configured
+app.get('/api/location/config', (req, res) => {
+  res.json({
+    configured: locationService.isConfigured(),
+    message: locationService.isConfigured() 
+      ? 'Google Maps API is configured' 
+      : 'Google Maps API key not configured. Please set GOOGLE_MAPS_API_KEY environment variable.'
+  });
 });
 
 // Error handling middleware
