@@ -84,12 +84,6 @@ export default function MapView({
   const [locationHistory, setLocationHistory] = useState([]);
   const [isTracking, setIsTracking] = useState(false);
   const [error, setError] = useState(null);
-  const [trackingStats, setTrackingStats] = useState({
-    totalLocations: 0,
-    averageAccuracy: 0,
-    bestAccuracy: Infinity,
-    trackingDuration: 0
-  });
   const [precisionMode, setPrecisionMode] = useState('high');
   const [smoothedLocation, setSmoothedLocation] = useState(null);
   const [enhancedLocationData, setEnhancedLocationData] = useState(null);
@@ -400,22 +394,6 @@ export default function MapView({
     );
   };
 
-  // Update tracking statistics
-  const updateTrackingStats = useCallback((newLocation) => {
-    setTrackingStats(prev => {
-      const totalLocations = prev.totalLocations + 1;
-      const newAverageAccuracy = ((prev.averageAccuracy * prev.totalLocations) + newLocation.accuracy) / totalLocations;
-      const newBestAccuracy = Math.min(prev.bestAccuracy, newLocation.accuracy);
-      const trackingDuration = startTimeRef.current ? Date.now() - startTimeRef.current : 0;
-      
-      return {
-        totalLocations,
-        averageAccuracy: newAverageAccuracy,
-        bestAccuracy: newBestAccuracy,
-        trackingDuration
-      };
-    });
-  }, []);
 
   // Get enhanced location data
   const getEnhancedLocationData = useCallback(async (latitude, longitude) => {
@@ -637,7 +615,6 @@ export default function MapView({
             return [...newHistory.slice(-99), location]; // Keep last 100 locations
           });
           
-          updateTrackingStats(location);
           onLocationUpdate?.(smoothed);
           
           // Get enhanced location data if API is configured
@@ -661,7 +638,7 @@ export default function MapView({
         watchIdRef.current = null;
       }
     };
-  }, [isTracking, precisionMode, smoothLocation, updateTrackingStats, onLocationUpdate]);
+  }, [isTracking, precisionMode, smoothLocation, onLocationUpdate]);
 
   return (
     <div className="map-container relative">
@@ -738,34 +715,6 @@ export default function MapView({
           <div className="text-red-500 text-sm mb-4 p-2 bg-red-50 rounded">{error}</div>
         )}
 
-        {/* Location Info */}
-        {userLocation && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div className="bg-white p-3 rounded border">
-              <h4 className="font-semibold text-gray-800 mb-2">Current Location</h4>
-              <div className="text-sm space-y-1">
-                <div><strong>Lat:</strong> {userLocation.latitude.toFixed(8)}</div>
-                <div><strong>Lng:</strong> {userLocation.longitude.toFixed(8)}</div>
-                <div><strong>Accuracy:</strong> {userLocation.accuracy.toFixed(1)}m</div>
-                {userLocation.altitude && <div><strong>Altitude:</strong> {userLocation.altitude.toFixed(1)}m</div>}
-                {userLocation.speed && <div><strong>Speed:</strong> {userLocation.speed.toFixed(1)} m/s</div>}
-                {userLocation.heading && <div><strong>Heading:</strong> {userLocation.heading.toFixed(1)}°</div>}
-                {userLocation.smoothed && <div className="text-blue-600"><strong>Smoothed:</strong> Yes</div>}
-              </div>
-            </div>
-
-            <div className="bg-white p-3 rounded border">
-              <h4 className="font-semibold text-gray-800 mb-2">Tracking Stats</h4>
-              <div className="text-sm space-y-1">
-                <div><strong>Locations:</strong> {trackingStats.totalLocations}</div>
-                <div><strong>Avg Accuracy:</strong> {trackingStats.averageAccuracy.toFixed(1)}m</div>
-                <div><strong>Best Accuracy:</strong> {trackingStats.bestAccuracy === Infinity ? 'N/A' : trackingStats.bestAccuracy.toFixed(1) + 'm'}</div>
-                <div><strong>Duration:</strong> {Math.floor(trackingStats.trackingDuration / 1000)}s</div>
-                <div><strong>History:</strong> {locationHistory.length} points</div>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Enhanced Location Data */}
         {enhancedLocationData && (
