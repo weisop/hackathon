@@ -7,6 +7,10 @@ import FriendsList from '../components/FriendsList';
 // import FriendsDebugger from '../components/FriendsDebugger';
 import DatabaseDebugger from '../components/DatabaseDebugger';
 import ApiDebugger from '../components/ApiDebugger';
+import AILocationRecommendations from '../components/AILocationRecommendations';
+import AILocationDescription from '../components/AILocationDescription';
+import AIInsightsDashboard from '../components/AIInsightsDashboard';
+import SmartNotifications from '../components/SmartNotifications';
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
@@ -15,6 +19,26 @@ const Dashboard = () => {
   // Friends functionality temporarily disabled
   // const [showDebugger, setShowDebugger] = useState(false);
   const [showDatabaseDebugger, setShowDatabaseDebugger] = useState(false);
+  
+  // AI Features State
+  const [currentLocation, setCurrentLocation] = useState('HUB');
+  const [userLevel, setUserLevel] = useState(1);
+  const [userHistory, setUserHistory] = useState([
+    { locationName: 'Library', timeSpent: 45, visits: 3 },
+    { locationName: 'HUB', timeSpent: 30, visits: 2 },
+    { locationName: 'Gym', timeSpent: 60, visits: 1 }
+  ]);
+  const [userData, setUserData] = useState({
+    totalTime: 135, // minutes
+    totalVisits: 6,
+    favoriteLocation: 'Library',
+    currentLevel: 1,
+    visitPatterns: 'Morning study sessions'
+  });
+  const [locationData, setLocationData] = useState({
+    mostVisited: 'Library',
+    peakHours: '9-11 AM'
+  });
   const [userLocation, setUserLocation] = useState(null);
   // Demo markers for testing marker rendering on the map
   // Coordinates provided by user (first converted from DMS to decimal):
@@ -115,6 +139,44 @@ const Dashboard = () => {
             onLocationUpdate={handleLocationUpdate}
             markers={allDemoMarkers}
           />
+        </div>
+      </div>
+
+      {/* AI Features Section */}
+      <div className="bg-white shadow mb-6">
+        <div className="px-4 py-5 sm:p-6">
+          <div className="text-center mb-6">
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">🧠 AI-Powered Campus Intelligence</h2>
+            <p className="text-gray-600">Discover personalized insights and recommendations powered by Gemini AI</p>
+          </div>
+
+          <div className="space-y-6">
+            {/* AI Location Description */}
+            <AILocationDescription 
+              locationName={currentLocation}
+              userLevel={userLevel}
+              isVisible={true}
+            />
+
+            {/* AI Location Recommendations */}
+            <AILocationRecommendations 
+              userHistory={userHistory}
+              currentLocation={currentLocation}
+            />
+
+            {/* AI Insights Dashboard */}
+            <AIInsightsDashboard 
+              userData={userData}
+              locationData={locationData}
+            />
+
+            {/* Smart Notifications */}
+            <SmartNotifications 
+              currentLocation={currentLocation}
+              userLevel={userLevel}
+              isVisible={true}
+            />
+          </div>
         </div>
       </div>
 
