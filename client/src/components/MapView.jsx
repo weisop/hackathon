@@ -15,7 +15,7 @@ L.Icon.Default.mergeOptions({
     "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
 });
 
-// Component to update map center when user location changes
+// Component to update marker position without affecting map view
 const MapUpdater = ({ location }) => {
   const map = useMap();
   const markerRef = useRef(null);
@@ -24,16 +24,12 @@ const MapUpdater = ({ location }) => {
     if (!map) return;
 
     if (location) {
-      map.setView([location.latitude, location.longitude], map.getZoom());
-
-      // Reuse a single marker instead of creating a new one each update
+      // Only update marker position, don't change map view
       if (!markerRef.current) {
         markerRef.current = L.marker([location.latitude, location.longitude]).addTo(map);
       } else {
         markerRef.current.setLatLng([location.latitude, location.longitude]);
       }
-
-      markerRef.current.bindPopup("📍 You are here").openPopup();
     }
 
     return () => {
@@ -52,36 +48,9 @@ const MapUpdater = ({ location }) => {
   return null;
 };
 
-// Component to fit map bounds to markers and user location
+// Component to fit map bounds to markers and user location (disabled to prevent auto-reframing)
 const FitBounds = ({ markers = [], userLocation }) => {
-  const map = useMap();
-
-  useEffect(() => {
-    if (!map) return;
-
-    const points = [];
-    if (Array.isArray(markers)) {
-      markers.forEach(m => {
-        if (m && typeof m.latitude === 'number' && typeof m.longitude === 'number') {
-          points.push([m.latitude, m.longitude]);
-        }
-      });
-    }
-
-    if (userLocation && typeof userLocation.latitude === 'number' && typeof userLocation.longitude === 'number') {
-      points.push([userLocation.latitude, userLocation.longitude]);
-    }
-
-    if (points.length === 0) return;
-
-    try {
-      const bounds = L.latLngBounds(points);
-      map.fitBounds(bounds, { padding: [40, 40], maxZoom: 16 });
-    } catch (e) {
-      // ignore
-    }
-  }, [map, markers, userLocation]);
-
+  // Disabled to prevent automatic reframing during location updates
   return null;
 };
 
@@ -118,6 +87,8 @@ export default function MapView({
   const [googleMapsConfigured, setGoogleMapsConfigured] = useState(false);
   const [friendLocations, setFriendLocations] = useState([]);
   const [showFriendLocations, setShowFriendLocations] = useState(true);
+  const [nearbyBuilding, setNearbyBuilding] = useState(null);
+  const [showYouAreHereButton, setShowYouAreHereButton] = useState(false);
   
   const watchIdRef = useRef(null);
   const startTimeRef = useRef(null);
@@ -159,6 +130,29 @@ export default function MapView({
 
     return R * c; // Distance in meters
   };
+
+  // Check if user is near any building markers
+  const checkProximityToBuildings = useCallback((userLat, userLng) => {
+    if (!Array.isArray(markers) || markers.length === 0) return;
+
+    const PROXIMITY_THRESHOLD = 50; // 50 meters threshold for being "near" a building
+    
+    for (const marker of markers) {
+      if (marker.latitude && marker.longitude) {
+        const distance = calculateDistance(userLat, userLng, marker.latitude, marker.longitude);
+        
+        if (distance <= PROXIMITY_THRESHOLD) {
+          setNearbyBuilding(marker);
+          setShowYouAreHereButton(true);
+          return;
+        }
+      }
+    }
+    
+    // If no nearby building found, hide the button
+    setNearbyBuilding(null);
+    setShowYouAreHereButton(false);
+  }, [markers, calculateDistance]);
 
   // Get precision options based on mode
   const getPrecisionOptions = (mode) => {
@@ -213,6 +207,10 @@ export default function MapView({
         
         setUserLocation(location);
         setError(null);
+        
+        // Check proximity to buildings
+        checkProximityToBuildings(location.latitude, location.longitude);
+        
         onLocationUpdate?.(location);
       },
       (error) => {
@@ -345,6 +343,9 @@ export default function MapView({
           
           setUserLocation(smoothed);
           setSmoothedLocation(smoothed);
+          
+          // Check proximity to buildings
+          checkProximityToBuildings(smoothed.latitude, smoothed.longitude);
           
           // Add to history with distance calculation
           setLocationHistory(prev => {
@@ -593,6 +594,34 @@ export default function MapView({
                 </Popup>
               </Marker>
               
+              {/* "You are here" button when near a building */}
+              {showYouAreHereButton && nearbyBuilding && (
+                <Marker
+                  position={[userLocation.latitude, userLocation.longitude]}
+                  icon={L.divIcon({
+                    className: 'you-are-here-button',
+                    html: `
+                      <div style="
+                        background: linear-gradient(135deg, #10B981, #059669);
+                        color: white;
+                        padding: 8px 16px;
+                        border-radius: 20px;
+                        font-size: 12px;
+                        font-weight: 600;
+                        text-align: center;
+                        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+                        border: 2px solid white;
+                        white-space: nowrap;
+                        cursor: pointer;
+                      ">
+                        ${nearbyBuilding.name}
+                      </div>
+                    `,
+                    iconSize: [200, 40],
+                    iconAnchor: [100, 40]
+                  })}
+                />
+              )}
             </>
           )}
 
@@ -648,23 +677,7 @@ export default function MapView({
                 iconSize: [8, 8],
                 iconAnchor: [4, 4]
               })}
-            >
-              <Tooltip permanent direction="top" className="map-tooltip">{location.name ?? `Point ${index + 1}`}</Tooltip>
-              <Popup>
-                <div>
-                  <strong>History Point {index + 1}</strong>
-                  <br />
-                  Lat: {location.latitude.toFixed(8)}
-                  <br />
-                  Lng: {location.longitude.toFixed(8)}
-                  <br />
-                  Accuracy: {location.accuracy.toFixed(1)}m
-                  {location.distanceFromLast && <><br />Distance: {location.distanceFromLast.toFixed(1)}m</>}
-                  <br />
-                  Time: {new Date(location.timestamp).toLocaleTimeString()}
-                </div>
-              </Popup>
-            </Marker>
+            />
           ))}
 
           {/* External markers passed via props */}

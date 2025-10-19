@@ -222,3 +222,4 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
 - **Analytics**: Movement pattern analysis
 - **Notifications**: Location-based alerts
 - **Social Features**: Share location with others
+

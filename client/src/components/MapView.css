@@ -142,3 +142,40 @@
   font-size: 12px !important;
   pointer-events: none !important;
 }
+
+/* "You are here" button styles */
+.you-are-here-button {
+  background: transparent !important;
+  border: none !important;
+  pointer-events: auto !important;
+}
+
+.you-are-here-button div {
+  transition: all 0.3s ease !important;
+  user-select: none !important;
+}
+
+.you-are-here-button div:hover {
+  transform: translateY(-40px) scale(1.05) !important;
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.6) !important;
+}
+
+/* Enhanced pulse animation for proximity button */
+@keyframes proximityPulse {
+  0% {
+    transform: translateY(-40px) scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: translateY(-40px) scale(1.05);
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateY(-40px) scale(1);
+    opacity: 1;
+  }
+}
+
+.you-are-here-button div {
+  animation: proximityPulse 2s infinite !important;
+}

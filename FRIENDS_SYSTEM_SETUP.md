@@ -221,3 +221,4 @@ console.log('Friend locations:', locations);
 ```
 
 Your friends system is ready for your hackathon! 🎉
+

@@ -6,11 +6,7 @@ import FriendsList from '../components/FriendsList';
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
-  const [items, setItems] = useState([]);
-  const [newItem, setNewItem] = useState('');
-  const [loading, setLoading] = useState(false);
   const [serverStatus, setServerStatus] = useState('unknown');
-  const [showMap, setShowMap] = useState(false);
   const [showFriends, setShowFriends] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
   // Demo markers for testing marker rendering on the map
@@ -50,7 +46,6 @@ const Dashboard = () => {
 
   useEffect(() => {
     checkServerHealth();
-    fetchItems();
   }, []);
 
   const checkServerHealth = async () => {
@@ -59,61 +54,6 @@ const Dashboard = () => {
       setServerStatus('connected');
     } catch (error) {
       setServerStatus('disconnected');
-    }
-  };
-
-  const fetchItems = async () => {
-    try {
-      setLoading(true);
-      const data = await apiService.getItems();
-      setItems(data);
-    } catch (error) {
-      console.error('Failed to fetch items:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleAddItem = async (e) => {
-    e.preventDefault();
-    if (!newItem.trim()) return;
-
-    try {
-      setLoading(true);
-      const item = await apiService.createItem({ 
-        name: newItem, 
-        completed: false 
-      });
-      setItems([...items, item]);
-      setNewItem('');
-    } catch (error) {
-      console.error('Failed to add item:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleToggleItem = async (id) => {
-    try {
-      const item = items.find(item => item.id === id);
-      const updatedItem = await apiService.updateItem(id, {
-        ...item,
-        completed: !item.completed
-      });
-      setItems(items.map(item => 
-        item.id === id ? updatedItem : item
-      ));
-    } catch (error) {
-      console.error('Failed to toggle item:', error);
-    }
-  };
-
-  const handleDeleteItem = async (id) => {
-    try {
-      await apiService.deleteItem(id);
-      setItems(items.filter(item => item.id !== id));
-    } catch (error) {
-      console.error('Failed to delete item:', error);
     }
   };
 
@@ -143,12 +83,6 @@ const Dashboard = () => {
             </div>
             <div className="flex items-center space-x-4">
               <button
-                onClick={() => setShowMap(!showMap)}
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium"
-              >
-                {showMap ? 'Hide Map' : 'Show Map'}
-              </button>
-              <button
                 onClick={() => setShowFriends(!showFriends)}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium"
               >
@@ -167,26 +101,18 @@ const Dashboard = () => {
       </header>
 
       {/* Map Section */}
-      {showMap && (
-        <div className="bg-white shadow mb-6">
-          <div className="px-4 py-5 sm:p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">Location Tracking</h2>
-              <button
-                onClick={() => setShowMap(false)}
-                className="text-gray-500 hover:text-gray-700 text-2xl"
-              >
-                ×
-              </button>
-            </div>
-            <MapView
-              height="500px"
-              onLocationUpdate={handleLocationUpdate}
-              markers={allDemoMarkers}
-            />
+      <div className="bg-white shadow mb-6">
+        <div className="px-4 py-5 sm:p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold text-gray-900">Location Tracking</h2>
           </div>
+          <MapView
+            height="500px"
+            onLocationUpdate={handleLocationUpdate}
+            markers={allDemoMarkers}
+          />
         </div>
-      )}
+      </div>
 
       {/* Friends List Modal */}
       {showFriends && (
@@ -208,74 +134,6 @@ const Dashboard = () => {
         </div>
       )}
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
-          <div className="bg-white shadow rounded-lg">
-            <div className="px-4 py-5 sm:p-6">
-              <h2 className="text-lg font-medium text-gray-900 mb-6">Todo Items</h2>
-              
-              {/* Add Item Form */}
-              <form onSubmit={handleAddItem} className="mb-6">
-                <div className="flex gap-4">
-                  <input
-                    type="text"
-                    value={newItem}
-                    onChange={(e) => setNewItem(e.target.value)}
-                    placeholder="Add a new item..."
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  />
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
-                  >
-                    {loading ? 'Adding...' : 'Add Item'}
-                  </button>
-                </div>
-              </form>
-
-              {/* Items List */}
-              <div className="space-y-3">
-                {loading && items.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">Loading items...</div>
-                ) : items.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    No items yet. Add one above!
-                  </div>
-                ) : (
-                  items.map(item => (
-                    <div
-                      key={item.id}
-                      className={`flex items-center p-4 border rounded-lg ${
-                        item.completed ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={item.completed}
-                        onChange={() => handleToggleItem(item.id)}
-                        className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                      />
-                      <span className={`ml-3 flex-1 ${
-                        item.completed ? 'line-through text-gray-500' : 'text-gray-900'
-                      }`}>
-                        {item.name}
-                      </span>
-                      <button
-                        onClick={() => handleDeleteItem(item.id)}
-                        className="ml-3 text-red-600 hover:text-red-800 text-sm font-medium"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </main>
     </div>
   );
 };
