@@ -659,6 +659,349 @@ app.get('/api/location/sharing', requireAuth, async (req, res) => {
   }
 });
 
+// ===== LOCATION SESSIONS API ENDPOINTS =====
+
+// Start a new location session
+app.post('/api/location-sessions/start', requireAuth, async (req, res) => {
+  try {
+    const { locationId, locationName, latitude, longitude, targetHours } = req.body;
+    
+    if (!locationId || !locationName || !latitude || !longitude || !targetHours) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    // Check if there's already an active session for this location
+    const { data: existingSession, error: checkError } = await supabase
+      .from('location_sessions')
+      .select('*')
+      .eq('user_id', req.user.id)
+      .eq('location_id', locationId)
+      .eq('is_active', true)
+      .single();
+
+    if (existingSession) {
+      return res.status(400).json({ error: 'Session already active for this location' });
+    }
+
+    // Create new session
+    const { data: session, error } = await supabase
+      .from('location_sessions')
+      .insert({
+        user_id: req.user.id,
+        location_id: locationId,
+        location_name: locationName,
+        latitude: parseFloat(latitude),
+        longitude: parseFloat(longitude),
+        target_hours: parseFloat(targetHours),
+        session_start_time: new Date().toISOString(),
+        is_active: true
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    res.json({ message: 'Location session started', session });
+  } catch (error) {
+    console.error('Error starting location session:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// End a location session
+app.post('/api/location-sessions/end', requireAuth, async (req, res) => {
+  try {
+    const { sessionId } = req.body;
+    
+    if (!sessionId) {
+      return res.status(400).json({ error: 'Session ID is required' });
+    }
+
+    // End the session
+    const { data: session, error } = await supabase
+      .from('location_sessions')
+      .update({
+        is_active: false,
+        session_end_time: new Date().toISOString()
+      })
+      .eq('id', sessionId)
+      .eq('user_id', req.user.id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    res.json({ message: 'Location session ended', session });
+  } catch (error) {
+    console.error('Error ending location session:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get active location sessions
+app.get('/api/location-sessions/active', requireAuth, async (req, res) => {
+  try {
+    const { data: sessions, error } = await supabase
+      .from('location_sessions')
+      .select('*')
+      .eq('user_id', req.user.id)
+      .eq('is_active', true)
+      .order('session_start_time', { ascending: false });
+
+    if (error) throw error;
+    res.json(sessions);
+  } catch (error) {
+    console.error('Error fetching active sessions:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get location session history
+app.get('/api/location-sessions/history', requireAuth, async (req, res) => {
+  try {
+    const { limit = 50, offset = 0 } = req.query;
+    
+    const { data: sessions, error } = await supabase
+      .from('location_sessions')
+      .select('*')
+      .eq('user_id', req.user.id)
+      .order('session_start_time', { ascending: false })
+      .range(parseInt(offset), parseInt(offset) + parseInt(limit) - 1);
+
+    if (error) throw error;
+    res.json(sessions);
+  } catch (error) {
+    console.error('Error fetching session history:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update session checkpoint (for real-time tracking)
+app.post('/api/location-sessions/checkpoint', requireAuth, async (req, res) => {
+  try {
+    const { sessionId, latitude, longitude, accuracy } = req.body;
+    
+    if (!sessionId || !latitude || !longitude) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    // Get the session to calculate duration
+    const { data: session, error: sessionError } = await supabase
+      .from('location_sessions')
+      .select('session_start_time')
+      .eq('id', sessionId)
+      .eq('user_id', req.user.id)
+      .eq('is_active', true)
+      .single();
+
+    if (sessionError || !session) {
+      return res.status(404).json({ error: 'Active session not found' });
+    }
+
+    const durationSeconds = Math.floor((Date.now() - new Date(session.session_start_time).getTime()) / 1000);
+
+    // Add checkpoint
+    const { data: checkpoint, error } = await supabase
+      .from('location_session_checkpoints')
+      .insert({
+        session_id: sessionId,
+        checkpoint_time: new Date().toISOString(),
+        duration_seconds: durationSeconds,
+        latitude: parseFloat(latitude),
+        longitude: parseFloat(longitude),
+        accuracy: accuracy ? parseFloat(accuracy) : null
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    res.json({ message: 'Checkpoint added', checkpoint, durationSeconds });
+  } catch (error) {
+    console.error('Error adding session checkpoint:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get location achievements
+app.get('/api/location-sessions/achievements', requireAuth, async (req, res) => {
+  try {
+    const { data: achievements, error } = await supabase
+      .from('location_achievements')
+      .select('*')
+      .eq('user_id', req.user.id)
+      .order('achievement_date', { ascending: false });
+
+    if (error) throw error;
+    res.json(achievements);
+  } catch (error) {
+    console.error('Error fetching achievements:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Create location achievement
+app.post('/api/location-sessions/achievements', requireAuth, async (req, res) => {
+  try {
+    const { location_id, location_name, target_hours, achieved_hours, achievement_date, is_milestone } = req.body;
+    
+    if (!location_id || !location_name || !target_hours || !achieved_hours) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    const { data: achievement, error } = await supabase
+      .from('location_achievements')
+      .insert({
+        user_id: req.user.id,
+        location_id,
+        location_name,
+        target_hours: parseFloat(target_hours),
+        achieved_hours: parseFloat(achieved_hours),
+        achievement_date: achievement_date || new Date().toISOString(),
+        is_milestone: is_milestone || false
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    res.json({ message: 'Achievement created', achievement });
+  } catch (error) {
+    console.error('Error creating achievement:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ===== LOCATION LEVELS API ENDPOINTS =====
+
+// Get user's level for a specific location
+app.get('/api/location-levels/:locationId', requireAuth, async (req, res) => {
+  try {
+    const { locationId } = req.params;
+    
+    const { data: level, error } = await supabase
+      .rpc('get_or_create_user_level', {
+        p_user_id: req.user.id,
+        p_location_id: locationId,
+        p_location_name: locationId // You might want to pass the actual name
+      });
+
+    if (error) throw error;
+    res.json(level);
+  } catch (error) {
+    console.error('Error getting user level:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get all user's location levels
+app.get('/api/location-levels', requireAuth, async (req, res) => {
+  try {
+    const { data: levels, error } = await supabase
+      .from('location_levels')
+      .select('*')
+      .eq('user_id', req.user.id)
+      .order('updated_at', { ascending: false });
+
+    if (error) throw error;
+    res.json(levels);
+  } catch (error) {
+    console.error('Error getting user levels:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update user's time spent at a location
+app.post('/api/location-levels/:locationId/time', requireAuth, async (req, res) => {
+  try {
+    const { locationId } = req.params;
+    const { timeSpentSeconds, locationName } = req.body;
+    
+    if (!timeSpentSeconds) {
+      return res.status(400).json({ error: 'Time spent is required' });
+    }
+
+    // Get or create user level
+    const { data: userLevel, error: levelError } = await supabase
+      .rpc('get_or_create_user_level', {
+        p_user_id: req.user.id,
+        p_location_id: locationId,
+        p_location_name: locationName || locationId
+      });
+
+    if (levelError) throw levelError;
+
+    // Update time spent
+    const newTotalTime = userLevel.total_time_spent_seconds + timeSpentSeconds;
+    
+    const { data: updatedLevel, error: updateError } = await supabase
+      .from('location_levels')
+      .update({
+        total_time_spent_seconds: newTotalTime,
+        updated_at: new Date().toISOString()
+      })
+      .eq('user_id', req.user.id)
+      .eq('location_id', locationId)
+      .select()
+      .single();
+
+    if (updateError) throw updateError;
+
+    // Check if level is completed
+    const { data: isCompleted, error: checkError } = await supabase
+      .rpc('check_level_completion', {
+        p_user_id: req.user.id,
+        p_location_id: locationId,
+        p_level: userLevel.current_level
+      });
+
+    if (checkError) throw checkError;
+
+    res.json({ 
+      level: updatedLevel, 
+      isCompleted: isCompleted,
+      timeSpent: newTotalTime
+    });
+  } catch (error) {
+    console.error('Error updating location time:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Advance user to next level
+app.post('/api/location-levels/:locationId/advance', requireAuth, async (req, res) => {
+  try {
+    const { locationId } = req.params;
+    const { locationName } = req.body;
+
+    const { data: newLevel, error } = await supabase
+      .rpc('advance_to_next_level', {
+        p_user_id: req.user.id,
+        p_location_id: locationId,
+        p_location_name: locationName || locationId
+      });
+
+    if (error) throw error;
+    res.json({ message: 'Level advanced', level: newLevel });
+  } catch (error) {
+    console.error('Error advancing level:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get level achievements
+app.get('/api/location-levels/achievements', requireAuth, async (req, res) => {
+  try {
+    const { data: achievements, error } = await supabase
+      .from('location_level_achievements')
+      .select('*')
+      .eq('user_id', req.user.id)
+      .order('achievement_date', { ascending: false });
+
+    if (error) throw error;
+    res.json(achievements);
+  } catch (error) {
+    console.error('Error getting level achievements:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);

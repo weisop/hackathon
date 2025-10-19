@@ -28,12 +28,19 @@ const api = axios.create({
   timeout: API_CONFIG.timeout,
 });
 
-// Add request interceptor to handle dynamic URL updates
+// Add request interceptor to handle dynamic URL updates and authentication
 api.interceptors.request.use(async (config) => {
   // Update base URL if needed
   if (config.baseURL !== API_BASE_URL) {
     config.baseURL = API_BASE_URL;
   }
+  
+  // Add authentication token if available
+  const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  
   return config;
 });
 
@@ -354,6 +361,147 @@ export const apiService = {
       throw error;
     }
   },
+
+  // ===== LOCATION SESSIONS API METHODS =====
+
+  // Start a new location session
+  startLocationSession: async (sessionData) => {
+    try {
+      const response = await api.post('/location-sessions/start', sessionData);
+      return response.data;
+    } catch (error) {
+      console.error('Error starting location session:', error);
+      throw error;
+    }
+  },
+
+  // End a location session
+  endLocationSession: async (sessionId) => {
+    try {
+      const response = await api.post('/location-sessions/end', { sessionId });
+      return response.data;
+    } catch (error) {
+      console.error('Error ending location session:', error);
+      throw error;
+    }
+  },
+
+  // Get active location sessions
+  getActiveLocationSessions: async () => {
+    try {
+      const response = await api.get('/location-sessions/active');
+      return response.data;
+    } catch (error) {
+      console.error('Error getting active sessions:', error);
+      throw error;
+    }
+  },
+
+  // Get location session history
+  getLocationSessionHistory: async (limit = 50, offset = 0) => {
+    try {
+      const response = await api.get(`/location-sessions/history?limit=${limit}&offset=${offset}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error getting session history:', error);
+      throw error;
+    }
+  },
+
+  // Add session checkpoint
+  addSessionCheckpoint: async (checkpointData) => {
+    try {
+      const response = await api.post('/location-sessions/checkpoint', checkpointData);
+      return response.data;
+    } catch (error) {
+      console.error('Error adding session checkpoint:', error);
+      throw error;
+    }
+  },
+
+    // Get location achievements
+    getLocationAchievements: async () => {
+      try {
+        const response = await api.get('/location-sessions/achievements');
+        return response.data;
+      } catch (error) {
+        console.error('Error getting achievements:', error);
+        throw error;
+      }
+    },
+
+    // Create location achievement
+    createLocationAchievement: async (achievementData) => {
+      try {
+        const response = await api.post('/location-sessions/achievements', achievementData);
+        return response.data;
+      } catch (error) {
+        console.error('Error creating achievement:', error);
+        throw error;
+      }
+    },
+
+    // ===== LOCATION LEVELS API METHODS =====
+
+    // Get user's level for a specific location
+    getUserLocationLevel: async (locationId) => {
+      try {
+        const response = await api.get(`/location-levels/${locationId}`);
+        return response.data;
+      } catch (error) {
+        console.error('Error getting user level:', error);
+        throw error;
+      }
+    },
+
+    // Get all user's location levels
+    getAllUserLevels: async () => {
+      try {
+        const response = await api.get('/location-levels');
+        return response.data;
+      } catch (error) {
+        console.error('Error getting user levels:', error);
+        throw error;
+      }
+    },
+
+    // Update time spent at a location
+    updateLocationTime: async (locationId, timeSpentSeconds, locationName) => {
+      try {
+        const response = await api.post(`/location-levels/${locationId}/time`, {
+          timeSpentSeconds,
+          locationName
+        });
+        return response.data;
+      } catch (error) {
+        console.error('Error updating location time:', error);
+        throw error;
+      }
+    },
+
+    // Advance user to next level
+    advanceToNextLevel: async (locationId, locationName) => {
+      try {
+        const response = await api.post(`/location-levels/${locationId}/advance`, {
+          locationName
+        });
+        return response.data;
+      } catch (error) {
+        console.error('Error advancing level:', error);
+        throw error;
+      }
+    },
+
+    // Get level achievements
+    getLevelAchievements: async () => {
+      try {
+        const response = await api.get('/location-levels/achievements');
+        return response.data;
+      } catch (error) {
+        console.error('Error getting level achievements:', error);
+        throw error;
+      }
+    },
 };
 
 export default apiService;

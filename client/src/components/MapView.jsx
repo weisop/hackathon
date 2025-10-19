@@ -3,6 +3,9 @@ import { MapContainer, TileLayer, Marker, Popup, useMap, Circle, Tooltip } from 
 import L from 'leaflet';
 import './MapView.css';
 import { apiService } from '../services/api';
+import LocationProgressBar from './LocationProgressBar';
+import LocationLevelProgress from './LocationLevelProgress';
+import CelebrationModal from './CelebrationModal';
 // import 'leaflet.tilelayer.colorfilter';
 
 //   const fantasyMapFilter = [
@@ -93,12 +96,28 @@ export default function MapView({
   const [nearbyPlaces, setNearbyPlaces] = useState([]);
   const [isLoadingEnhanced, setIsLoadingEnhanced] = useState(false);
   const [googleMapsConfigured, setGoogleMapsConfigured] = useState(false);
-  const [friendLocations, setFriendLocations] = useState([]);
-  const [showFriendLocations, setShowFriendLocations] = useState(true);
+  // Friends functionality temporarily disabled
+  // const [friendLocations, setFriendLocations] = useState([]);
+  // const [showFriendLocations, setShowFriendLocations] = useState(true);
   const [nearbyBuilding, setNearbyBuilding] = useState(null);
   const [showYouAreHereButton, setShowYouAreHereButton] = useState(false);
   const [locationStartTime, setLocationStartTime] = useState(null);
   const [elapsedTime, setElapsedTime] = useState(0);
+  const [showProgressBar, setShowProgressBar] = useState(false);
+  const [activeSession, setActiveSession] = useState(null);
+  const [sessionId, setSessionId] = useState(null);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [achievementData, setAchievementData] = useState(null);
+  const [shownAchievements, setShownAchievements] = useState(() => {
+    // Load shown achievements from localStorage on component mount
+    try {
+      const saved = localStorage.getItem('shownAchievements');
+      return saved ? new Set(JSON.parse(saved)) : new Set();
+    } catch (error) {
+      console.warn('Failed to load shown achievements from localStorage:', error);
+      return new Set();
+    }
+  });
   
   const watchIdRef = useRef(null);
   const startTimeRef = useRef(null);
@@ -141,6 +160,122 @@ export default function MapView({
     return R * c; // Distance in meters
   };
 
+  // Start a location session in the database
+  const startLocationSession = useCallback(async (marker) => {
+    try {
+      const sessionData = {
+        locationId: marker.id,
+        locationName: marker.name,
+        latitude: marker.latitude,
+        longitude: marker.longitude,
+        targetHours: marker.targetHours || 4 // Default to 4 hours if not specified
+      };
+
+      const response = await apiService.startLocationSession(sessionData);
+      setActiveSession(response.session);
+      setSessionId(response.session.id);
+      console.log('✅ Location session started:', response.session);
+    } catch (error) {
+      console.error('❌ Failed to start location session:', error);
+      // Continue with local tracking even if database fails
+    }
+  }, []);
+
+  // End a location session in the database
+  const endLocationSession = useCallback(async () => {
+    if (!sessionId) return;
+
+    try {
+      await apiService.endLocationSession(sessionId);
+      console.log('✅ Location session ended');
+    } catch (error) {
+      console.error('❌ Failed to end location session:', error);
+    } finally {
+      setActiveSession(null);
+      setSessionId(null);
+    }
+  }, [sessionId]);
+
+  // Add a checkpoint to the current session
+  const addSessionCheckpoint = useCallback(async (latitude, longitude, accuracy) => {
+    if (!sessionId) return;
+
+    try {
+      await apiService.addSessionCheckpoint({
+        sessionId,
+        latitude,
+        longitude,
+        accuracy
+      });
+    } catch (error) {
+      console.error('❌ Failed to add session checkpoint:', error);
+    }
+  }, [sessionId]);
+
+  const handleAchievementComplete = (achievement) => {
+    // Create a unique key for this achievement
+    const achievementKey = `${achievement.locationName}-${achievement.level || 1}-${Math.floor(Date.now() / 1000)}`;
+    
+    // Check if this achievement has already been shown
+    if (shownAchievements.has(achievementKey)) {
+      console.log('🎉 Achievement already shown, skipping:', achievementKey);
+      return;
+    }
+    
+    console.log('🎉 Achievement completed!', achievement);
+    setAchievementData(achievement);
+    setShowCelebration(true);
+    
+    // Mark this achievement as shown
+    setShownAchievements(prev => new Set([...prev, achievementKey]));
+  };
+
+  const handleLevelComplete = (levelData) => {
+    // Create a unique key for this level achievement
+    const achievementKey = `${levelData.locationName}-level-${levelData.level}-${Math.floor(Date.now() / 1000)}`;
+    
+    // Check if this achievement has already been shown
+    if (shownAchievements.has(achievementKey)) {
+      console.log('🎉 Level achievement already shown, skipping:', achievementKey);
+      return;
+    }
+    
+    console.log('🎉 Level completed!', levelData);
+    setAchievementData({
+      locationName: levelData.locationName,
+      targetHours: 0.167, // Base time
+      achievedHours: levelData.timeSpent / 3600,
+      progressPercentage: 100,
+      level: levelData.level
+    });
+    setShowCelebration(true);
+    
+    // Mark this achievement as shown
+    setShownAchievements(prev => new Set([...prev, achievementKey]));
+  };
+
+  const handleLevelAdvancement = (levelData) => {
+    console.log('🚀 Level advanced!', levelData);
+    // Reset the celebration state to allow for new level celebrations
+    setShowCelebration(false);
+    setAchievementData(null);
+  };
+
+  // Function to clear shown achievements (for testing purposes)
+  const clearShownAchievements = () => {
+    setShownAchievements(new Set());
+    localStorage.removeItem('shownAchievements');
+    console.log('🧹 Cleared shown achievements');
+  };
+
+  // Expose clear function to window for testing
+  useEffect(() => {
+    window.clearShownAchievements = clearShownAchievements;
+    return () => {
+      delete window.clearShownAchievements;
+    };
+  }, []);
+
   // Check if user is near any building markers
   const checkProximityToBuildings = useCallback((userLat, userLng) => {
     if (!Array.isArray(markers) || markers.length === 0) return;
@@ -159,22 +294,31 @@ export default function MapView({
             return;
           }
           
-          // New building or first time at this building - start timer
+          // New building or first time at this building - start timer and session
           setNearbyBuilding(marker);
           setShowYouAreHereButton(true);
           setLocationStartTime(Date.now());
           setElapsedTime(0);
+          setShowProgressBar(true);
+          
+          // Start database session
+          startLocationSession(marker);
           return;
         }
       }
     }
     
     // If no nearby building found, hide the button and stop timer
+    if (nearbyBuilding) {
+      endLocationSession();
+    }
+    
     setNearbyBuilding(null);
     setShowYouAreHereButton(false);
     setLocationStartTime(null);
     setElapsedTime(0);
-  }, [markers, calculateDistance, nearbyBuilding]);
+    setShowProgressBar(false);
+  }, [markers, calculateDistance, nearbyBuilding, startLocationSession, endLocationSession]);
 
   // Format elapsed time for display
   const formatElapsedTime = (milliseconds) => {
@@ -302,17 +446,17 @@ export default function MapView({
     }
   }, []);
 
-  // Load friend locations
-  const loadFriendLocations = useCallback(async () => {
-    try {
-      const locations = await apiService.getFriendLocations();
-      setFriendLocations(locations);
-      console.log('👥 Friend locations loaded:', locations);
-    } catch (error) {
-      console.warn('⚠️ Friend locations not available (authentication required):', error.message);
-      setFriendLocations([]);
-    }
-  }, []);
+  // Friends functionality temporarily disabled
+  // const loadFriendLocations = useCallback(async () => {
+  //   try {
+  //     const locations = await apiService.getFriendLocations();
+  //     setFriendLocations(locations);
+  //     console.log('👥 Friend locations loaded:', locations);
+  //   } catch (error) {
+  //     console.warn('⚠️ Friend locations not available (authentication required):', error.message);
+  //     setFriendLocations([]);
+  //   }
+  // }, []);
 
   // Save location to backend
   const saveLocationToBackend = useCallback(async (location) => {
@@ -334,10 +478,45 @@ export default function MapView({
     checkGoogleMapsConfig();
   }, [checkGoogleMapsConfig]);
 
-  // Load friend locations on component mount
+  // Recover active sessions on component mount
   useEffect(() => {
-    loadFriendLocations();
-  }, [loadFriendLocations]);
+    const recoverActiveSessions = async () => {
+      try {
+        const activeSessions = await apiService.getActiveLocationSessions();
+        if (activeSessions && activeSessions.length > 0) {
+          const session = activeSessions[0]; // Get the most recent active session
+          setActiveSession(session);
+          setSessionId(session.id);
+          
+          // Find the corresponding marker
+          const marker = markers.find(m => m.id === session.location_id);
+          if (marker) {
+            setNearbyBuilding(marker);
+            setShowYouAreHereButton(true);
+            setShowProgressBar(true);
+            
+            // Calculate elapsed time since session start
+            const sessionStartTime = new Date(session.session_start_time).getTime();
+            const currentTime = Date.now();
+            const elapsed = currentTime - sessionStartTime;
+            setLocationStartTime(sessionStartTime);
+            setElapsedTime(elapsed);
+            
+            console.log('🔄 Recovered active session:', session);
+          }
+        }
+      } catch (error) {
+        console.warn('⚠️ Failed to recover active sessions:', error);
+      }
+    };
+
+    recoverActiveSessions();
+  }, [markers]);
+
+  // Friends functionality temporarily disabled
+  // useEffect(() => {
+  //   loadFriendLocations();
+  // }, [loadFriendLocations]);
 
   // Stopwatch timer effect
   useEffect(() => {
@@ -351,6 +530,15 @@ export default function MapView({
       if (interval) clearInterval(interval);
     };
   }, [locationStartTime]);
+
+  // Save shown achievements to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem('shownAchievements', JSON.stringify([...shownAchievements]));
+    } catch (error) {
+      console.warn('Failed to save shown achievements to localStorage:', error);
+    }
+  }, [shownAchievements]);
 
   // Start/stop location tracking
   const toggleTracking = () => {
@@ -394,6 +582,11 @@ export default function MapView({
           // Check proximity to buildings
           checkProximityToBuildings(smoothed.latitude, smoothed.longitude);
           
+          // Add checkpoint to active session if we're at a location
+          if (sessionId && nearbyBuilding) {
+            addSessionCheckpoint(smoothed.latitude, smoothed.longitude, smoothed.accuracy);
+          }
+          
           // Add to history with distance calculation
           setLocationHistory(prev => {
             const newHistory = [...prev];
@@ -435,7 +628,7 @@ export default function MapView({
   }, [isTracking, precisionMode, smoothLocation, updateTrackingStats, onLocationUpdate]);
 
   return (
-    <div className="map-container">
+    <div className="map-container relative">
       {/* Precision Controls */}
       <div className="precision-controls mb-4 p-4 bg-gray-50 rounded-lg">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
@@ -491,7 +684,8 @@ export default function MapView({
             Clear History
           </button>
 
-          <button
+          {/* Friends functionality temporarily disabled */}
+          {/* <button
             onClick={() => setShowFriendLocations(!showFriendLocations)}
             className={`px-4 py-2 rounded text-sm font-medium ${
               showFriendLocations 
@@ -500,7 +694,7 @@ export default function MapView({
             }`}
           >
             {showFriendLocations ? 'Hide Friends' : 'Show Friends'}
-          </button>
+          </button> */}
         </div>
 
         {/* Error Display */}
@@ -698,8 +892,9 @@ export default function MapView({
             </>
           )}
 
+          {/* Friends functionality temporarily disabled */}
           {/* Friend locations */}
-          {showFriendLocations && friendLocations.map((friend, index) => (
+          {/* {showFriendLocations && friendLocations.map((friend, index) => (
             <Marker
               key={`friend-${friend.friend_id}`}
               position={[friend.latest_latitude, friend.latest_longitude]}
@@ -734,7 +929,7 @@ export default function MapView({
                 </div>
               </Popup>
             </Marker>
-          ))}
+          ))} */}
 
           {/* Location history trail */}
           {locationHistory.map((location, index) => (
@@ -783,6 +978,28 @@ export default function MapView({
           <MapUpdater location={userLocation} />
         </MapContainer>
       </div>
+
+      {/* Location Level Progress */}
+      {showProgressBar && nearbyBuilding && (
+        <div className="absolute bottom-4 left-4 z-10">
+          <LocationLevelProgress
+            locationId={nearbyBuilding.id}
+            locationName={nearbyBuilding.name}
+            elapsedTime={elapsedTime}
+            isVisible={showProgressBar}
+            onLevelComplete={handleLevelComplete}
+            onLevelAdvancement={handleLevelAdvancement}
+          />
+        </div>
+      )}
+
+      {/* Celebration Modal */}
+      <CelebrationModal
+        isOpen={showCelebration}
+        onClose={() => setShowCelebration(false)}
+        locationName={achievementData?.locationName}
+        achievementData={achievementData}
+      />
     </div>
   );
 }
