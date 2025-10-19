@@ -132,6 +132,16 @@ const Collections = () => {
     return colors[Math.min(level, 5)] || 'bg-gray-500';
   };
 
+  const calculateLevelProgress = (achievement) => {
+    if (achievement.type === 'level') {
+      // For level achievements, they are always 100% complete since they represent completed levels
+      return 100;
+    } else {
+      // For regular achievements, calculate based on achieved vs target time
+      return Math.min(100, (achievement.achieved_hours / achievement.target_hours) * 100);
+    }
+  };
+
   const refreshAchievements = async () => {
     try {
       setLoading(true);
@@ -237,7 +247,11 @@ const Collections = () => {
                   {achievements.map((achievement) => (
                     <div
                       key={achievement.id}
-                      className="bg-gradient-to-br from-primary-50 to-primary-100 rounded-lg p-6 border border-primary-200"
+                      className={`rounded-lg p-6 border ${
+                        achievement.type === 'level'
+                          ? 'bg-gradient-to-br from-green-50 to-green-100 border-green-200'
+                          : 'bg-gradient-to-br from-primary-50 to-primary-100 border-primary-200'
+                      }`}
                     >
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center space-x-3">
@@ -266,6 +280,11 @@ const Collections = () => {
                       
                       <h3 className="text-lg font-semibold text-gray-900 mb-2">
                         {achievement.location_name}
+                        {achievement.type === 'level' && (
+                          <span className="ml-2 text-sm text-green-600 font-medium">
+                            (Level {achievement.level})
+                          </span>
+                        )}
                       </h3>
                       
                       <div className="space-y-2">
@@ -293,17 +312,26 @@ const Collections = () => {
                         <div className="flex items-center justify-between">
                           <span className="text-sm text-gray-600">Progress</span>
                           <span className="text-sm font-medium text-primary-600">
-                            {Math.round((achievement.achieved_hours / achievement.target_hours) * 100)}%
+                            {Math.round(calculateLevelProgress(achievement))}%
                           </span>
                         </div>
                         <div className="mt-2 w-full bg-primary-200 rounded-full h-2">
                           <div
-                            className="bg-primary-600 h-2 rounded-full"
+                            className={`h-2 rounded-full ${
+                              achievement.type === 'level' 
+                                ? 'bg-gradient-to-r from-green-400 to-green-600' 
+                                : 'bg-primary-600'
+                            }`}
                             style={{
-                              width: `${Math.min(100, (achievement.achieved_hours / achievement.target_hours) * 100)}%`
+                              width: `${calculateLevelProgress(achievement)}%`
                             }}
                           ></div>
                         </div>
+                        {achievement.type === 'level' && (
+                          <div className="text-xs text-green-600 font-medium mt-1 text-center">
+                            ✅ Level {achievement.level} Completed
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
