@@ -354,6 +354,74 @@ export const apiService = {
       throw error;
     }
   },
+
+  // ===== LOCATION SESSIONS API METHODS =====
+
+  // Start a new location session
+  startLocationSession: async (sessionData) => {
+    try {
+      const response = await api.post('/location-sessions/start', sessionData);
+      return response.data;
+    } catch (error) {
+      console.error('Error starting location session:', error);
+      throw error;
+    }
+  },
+
+  // End a location session
+  endLocationSession: async (sessionId) => {
+    try {
+      const response = await api.post('/location-sessions/end', { sessionId });
+      return response.data;
+    } catch (error) {
+      console.error('Error ending location session:', error);
+      throw error;
+    }
+  },
+
+  // Get active location sessions
+  getActiveLocationSessions: async () => {
+    try {
+      const response = await api.get('/location-sessions/active');
+      return response.data;
+    } catch (error) {
+      console.error('Error getting active sessions:', error);
+      throw error;
+    }
+  },
+
+  // Get location session history
+  getLocationSessionHistory: async (limit = 50, offset = 0) => {
+    try {
+      const response = await api.get(`/location-sessions/history?limit=${limit}&offset=${offset}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error getting session history:', error);
+      throw error;
+    }
+  },
+
+  // Add session checkpoint
+  addSessionCheckpoint: async (checkpointData) => {
+    try {
+      const response = await api.post('/location-sessions/checkpoint', checkpointData);
+      return response.data;
+    } catch (error) {
+      console.error('Error adding session checkpoint:', error);
+      throw error;
+    }
+  },
+
+  // Get location achievements
+  getLocationAchievements: async () => {
+    try {
+      const response = await api.get('/location-sessions/achievements');
+      return response.data;
+    } catch (error) {
+      console.error('Error getting achievements:', error);
+      throw error;
+    }
+  },
 };
 
 export default apiService;

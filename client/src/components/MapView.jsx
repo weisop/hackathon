@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap, Circle, Tooltip } from 
 import L from 'leaflet';
 import './MapView.css';
 import { apiService } from '../services/api';
+import LocationProgressBar from './LocationProgressBar';
 
 // Optional: custom icon fix for default markers in React
 delete L.Icon.Default.prototype._getIconUrl;
@@ -91,6 +92,9 @@ export default function MapView({
   const [showYouAreHereButton, setShowYouAreHereButton] = useState(false);
   const [locationStartTime, setLocationStartTime] = useState(null);
   const [elapsedTime, setElapsedTime] = useState(0);
+  const [showProgressBar, setShowProgressBar] = useState(false);
+  const [activeSession, setActiveSession] = useState(null);
+  const [sessionId, setSessionId] = useState(null);
   
   const watchIdRef = useRef(null);
   const startTimeRef = useRef(null);
@@ -133,6 +137,58 @@ export default function MapView({
     return R * c; // Distance in meters
   };
 
+  // Start a location session in the database
+  const startLocationSession = useCallback(async (marker) => {
+    try {
+      const sessionData = {
+        locationId: marker.id,
+        locationName: marker.name,
+        latitude: marker.latitude,
+        longitude: marker.longitude,
+        targetHours: marker.targetHours || 4 // Default to 4 hours if not specified
+      };
+
+      const response = await apiService.startLocationSession(sessionData);
+      setActiveSession(response.session);
+      setSessionId(response.session.id);
+      console.log('✅ Location session started:', response.session);
+    } catch (error) {
+      console.error('❌ Failed to start location session:', error);
+      // Continue with local tracking even if database fails
+    }
+  }, []);
+
+  // End a location session in the database
+  const endLocationSession = useCallback(async () => {
+    if (!sessionId) return;
+
+    try {
+      await apiService.endLocationSession(sessionId);
+      console.log('✅ Location session ended');
+    } catch (error) {
+      console.error('❌ Failed to end location session:', error);
+    } finally {
+      setActiveSession(null);
+      setSessionId(null);
+    }
+  }, [sessionId]);
+
+  // Add a checkpoint to the current session
+  const addSessionCheckpoint = useCallback(async (latitude, longitude, accuracy) => {
+    if (!sessionId) return;
+
+    try {
+      await apiService.addSessionCheckpoint({
+        sessionId,
+        latitude,
+        longitude,
+        accuracy
+      });
+    } catch (error) {
+      console.error('❌ Failed to add session checkpoint:', error);
+    }
+  }, [sessionId]);
+
   // Check if user is near any building markers
   const checkProximityToBuildings = useCallback((userLat, userLng) => {
     if (!Array.isArray(markers) || markers.length === 0) return;
@@ -151,22 +207,31 @@ export default function MapView({
             return;
           }
           
-          // New building or first time at this building - start timer
+          // New building or first time at this building - start timer and session
           setNearbyBuilding(marker);
           setShowYouAreHereButton(true);
           setLocationStartTime(Date.now());
           setElapsedTime(0);
+          setShowProgressBar(true);
+          
+          // Start database session
+          startLocationSession(marker);
           return;
         }
       }
     }
     
     // If no nearby building found, hide the button and stop timer
+    if (nearbyBuilding) {
+      endLocationSession();
+    }
+    
     setNearbyBuilding(null);
     setShowYouAreHereButton(false);
     setLocationStartTime(null);
     setElapsedTime(0);
-  }, [markers, calculateDistance, nearbyBuilding]);
+    setShowProgressBar(false);
+  }, [markers, calculateDistance, nearbyBuilding, startLocationSession, endLocationSession]);
 
   // Format elapsed time for display
   const formatElapsedTime = (milliseconds) => {
@@ -326,6 +391,41 @@ export default function MapView({
     checkGoogleMapsConfig();
   }, [checkGoogleMapsConfig]);
 
+  // Recover active sessions on component mount
+  useEffect(() => {
+    const recoverActiveSessions = async () => {
+      try {
+        const activeSessions = await apiService.getActiveLocationSessions();
+        if (activeSessions && activeSessions.length > 0) {
+          const session = activeSessions[0]; // Get the most recent active session
+          setActiveSession(session);
+          setSessionId(session.id);
+          
+          // Find the corresponding marker
+          const marker = markers.find(m => m.id === session.location_id);
+          if (marker) {
+            setNearbyBuilding(marker);
+            setShowYouAreHereButton(true);
+            setShowProgressBar(true);
+            
+            // Calculate elapsed time since session start
+            const sessionStartTime = new Date(session.session_start_time).getTime();
+            const currentTime = Date.now();
+            const elapsed = currentTime - sessionStartTime;
+            setLocationStartTime(sessionStartTime);
+            setElapsedTime(elapsed);
+            
+            console.log('🔄 Recovered active session:', session);
+          }
+        }
+      } catch (error) {
+        console.warn('⚠️ Failed to recover active sessions:', error);
+      }
+    };
+
+    recoverActiveSessions();
+  }, [markers]);
+
   // Load friend locations on component mount
   useEffect(() => {
     loadFriendLocations();
@@ -386,6 +486,11 @@ export default function MapView({
           // Check proximity to buildings
           checkProximityToBuildings(smoothed.latitude, smoothed.longitude);
           
+          // Add checkpoint to active session if we're at a location
+          if (sessionId && nearbyBuilding) {
+            addSessionCheckpoint(smoothed.latitude, smoothed.longitude, smoothed.accuracy);
+          }
+          
           // Add to history with distance calculation
           setLocationHistory(prev => {
             const newHistory = [...prev];
@@ -427,7 +532,7 @@ export default function MapView({
   }, [isTracking, precisionMode, smoothLocation, updateTrackingStats, onLocationUpdate]);
 
   return (
-    <div className="map-container">
+    <div className="map-container relative">
       {/* Precision Controls */}
       <div className="precision-controls mb-4 p-4 bg-gray-50 rounded-lg">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
@@ -775,6 +880,18 @@ export default function MapView({
           <MapUpdater location={userLocation} />
         </MapContainer>
       </div>
+
+      {/* Location Progress Bar */}
+      {showProgressBar && nearbyBuilding && (
+        <div className="absolute bottom-4 left-4 z-10">
+          <LocationProgressBar
+            locationName={nearbyBuilding.name}
+            elapsedTime={elapsedTime}
+            targetHours={nearbyBuilding.targetHours}
+            isVisible={showProgressBar}
+          />
+        </div>
+      )}
     </div>
   );
 }
