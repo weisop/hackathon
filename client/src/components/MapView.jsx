@@ -51,6 +51,8 @@ export default function MapView({
   const [nearbyPlaces, setNearbyPlaces] = useState([]);
   const [isLoadingEnhanced, setIsLoadingEnhanced] = useState(false);
   const [googleMapsConfigured, setGoogleMapsConfigured] = useState(false);
+  const [friendLocations, setFriendLocations] = useState([]);
+  const [showFriendLocations, setShowFriendLocations] = useState(true);
   
   const watchIdRef = useRef(null);
   const startTimeRef = useRef(null);
@@ -204,10 +206,41 @@ export default function MapView({
     }
   }, []);
 
+  // Load friend locations
+  const loadFriendLocations = useCallback(async () => {
+    try {
+      const locations = await apiService.getFriendLocations();
+      setFriendLocations(locations);
+      console.log('👥 Friend locations loaded:', locations);
+    } catch (error) {
+      console.error('❌ Failed to load friend locations:', error);
+    }
+  }, []);
+
+  // Save location to backend
+  const saveLocationToBackend = useCallback(async (location) => {
+    try {
+      await apiService.trackLocation({
+        latitude: location.latitude,
+        longitude: location.longitude,
+        accuracy: location.accuracy,
+        enhancedData: enhancedLocationData
+      });
+      console.log('💾 Location saved to backend');
+    } catch (error) {
+      console.error('❌ Failed to save location:', error);
+    }
+  }, [enhancedLocationData]);
+
   // Initialize Google Maps configuration check
   useEffect(() => {
     checkGoogleMapsConfig();
   }, [checkGoogleMapsConfig]);
+
+  // Load friend locations on component mount
+  useEffect(() => {
+    loadFriendLocations();
+  }, [loadFriendLocations]);
 
   // Start/stop location tracking
   const toggleTracking = () => {
@@ -269,6 +302,9 @@ export default function MapView({
           if (googleMapsConfigured) {
             getEnhancedLocationData(location.latitude, location.longitude);
           }
+
+          // Save location to backend
+          saveLocationToBackend(smoothed);
         },
         (error) => {
           setError('Location tracking error: ' + error.message);
@@ -340,6 +376,17 @@ export default function MapView({
             className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded text-sm font-medium"
           >
             Clear History
+          </button>
+
+          <button
+            onClick={() => setShowFriendLocations(!showFriendLocations)}
+            className={`px-4 py-2 rounded text-sm font-medium ${
+              showFriendLocations 
+                ? 'bg-green-500 hover:bg-green-600 text-white' 
+                : 'bg-gray-400 hover:bg-gray-500 text-white'
+            }`}
+          >
+            {showFriendLocations ? 'Hide Friends' : 'Show Friends'}
           </button>
         </div>
 
@@ -478,6 +525,44 @@ export default function MapView({
               
             </>
           )}
+
+          {/* Friend locations */}
+          {showFriendLocations && friendLocations.map((friend, index) => (
+            <Marker
+              key={`friend-${friend.friend_id}`}
+              position={[friend.latest_latitude, friend.latest_longitude]}
+              icon={L.divIcon({
+                className: 'friend-location-marker',
+                html: `<div class="w-4 h-4 bg-green-500 rounded-full border-2 border-white shadow-lg" title="${friend.friend_name}"></div>`,
+                iconSize: [16, 16],
+                iconAnchor: [8, 8]
+              })}
+            >
+              <Popup>
+                <div>
+                  <strong>{friend.friend_name}</strong>
+                  <br />
+                  <span className="text-sm text-gray-600">{friend.friend_email}</span>
+                  <br />
+                  <span className="text-xs text-gray-500">
+                    Last seen: {new Date(friend.location_updated_at).toLocaleString()}
+                  </span>
+                  {friend.latest_enhanced_data?.address && (
+                    <>
+                      <br />
+                      <span className="text-xs text-blue-600">📍 {friend.latest_enhanced_data.address}</span>
+                    </>
+                  )}
+                  {friend.latest_accuracy && (
+                    <>
+                      <br />
+                      <span className="text-xs text-gray-500">Accuracy: {friend.latest_accuracy.toFixed(1)}m</span>
+                    </>
+                  )}
+                </div>
+              </Popup>
+            </Marker>
+          ))}
 
           {/* Location history trail */}
           {locationHistory.map((location, index) => (

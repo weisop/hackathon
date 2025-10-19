@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { apiService } from '../services/api';
 import MapView from '../components/MapView';
+import FriendsList from '../components/FriendsList';
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
@@ -10,6 +11,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(false);
   const [serverStatus, setServerStatus] = useState('unknown');
   const [showMap, setShowMap] = useState(false);
+  const [showFriends, setShowFriends] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
 
   useEffect(() => {
@@ -112,6 +114,12 @@ const Dashboard = () => {
               >
                 {showMap ? 'Hide Map' : 'Show Map'}
               </button>
+              <button
+                onClick={() => setShowFriends(!showFriends)}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+              >
+                {showFriends ? 'Hide Friends' : 'Show Friends'}
+              </button>
               <span className="text-sm text-gray-700">Welcome, {user?.name || 'User'}!</span>
               <button
                 onClick={signOut}
@@ -141,6 +149,26 @@ const Dashboard = () => {
               height="500px"
               onLocationUpdate={handleLocationUpdate}
             />
+          </div>
+        </div>
+      )}
+
+      {/* Friends List Modal */}
+      {showFriends && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center p-6 border-b">
+              <h2 className="text-xl font-semibold text-gray-900">Friends</h2>
+              <button
+                onClick={() => setShowFriends(false)}
+                className="text-gray-500 hover:text-gray-700 text-2xl"
+              >
+                ×
+              </button>
+            </div>
+            <div className="p-6">
+              <FriendsList />
+            </div>
           </div>
         </div>
       )}
