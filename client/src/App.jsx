@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import Dashboard from './pages/Dashboard';
-import Profile from './pages/Profile';
+import Collections from './pages/Collections';
 import Settings from './pages/Settings';
 import Leaderboard from './pages/Leaderboard';
 import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom';
@@ -48,10 +48,10 @@ function AppContent() {
                   Leaderboard
                 </Link>
                 <Link
-                  to="/profile"
+                  to="/collections"
                   className="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm"
                 >
-                  Profile
+                  Collections
                 </Link>
                 <Link
                   to="/settings"
@@ -72,7 +72,7 @@ function AppContent() {
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/leaderboard" element={<Leaderboard />} />
-        <Route path="/profile" element={<Profile />} />
+        <Route path="/collections" element={<Collections />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>

@@ -1,11 +1,14 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 const LocationProgressBar = ({ 
   locationName, 
   elapsedTime, 
   targetHours, 
-  isVisible = true 
+  isVisible = true,
+  onAchievementComplete = null
 }) => {
+  const [hasTriggeredCelebration, setHasTriggeredCelebration] = useState(false);
+  
   if (!isVisible || !locationName || !targetHours) {
     return null;
   }
@@ -15,6 +18,19 @@ const LocationProgressBar = ({
   
   // Calculate progress percentage (capped at 100%)
   const progressPercentage = Math.min((elapsedHours / targetHours) * 100, 100);
+
+  // Trigger celebration when progress reaches 100%
+  useEffect(() => {
+    if (progressPercentage >= 100 && !hasTriggeredCelebration && onAchievementComplete) {
+      setHasTriggeredCelebration(true);
+      onAchievementComplete({
+        locationName,
+        targetHours,
+        achievedHours: elapsedHours,
+        progressPercentage: 100
+      });
+    }
+  }, [progressPercentage, hasTriggeredCelebration, onAchievementComplete, locationName, targetHours, elapsedHours]);
   
   // Determine progress bar color based on completion
   const getProgressColor = () => {

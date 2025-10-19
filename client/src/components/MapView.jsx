@@ -4,6 +4,7 @@ import L from 'leaflet';
 import './MapView.css';
 import { apiService } from '../services/api';
 import LocationProgressBar from './LocationProgressBar';
+import CelebrationModal from './CelebrationModal';
 
 // Optional: custom icon fix for default markers in React
 delete L.Icon.Default.prototype._getIconUrl;
@@ -95,6 +96,8 @@ export default function MapView({
   const [showProgressBar, setShowProgressBar] = useState(false);
   const [activeSession, setActiveSession] = useState(null);
   const [sessionId, setSessionId] = useState(null);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [achievementData, setAchievementData] = useState(null);
   
   const watchIdRef = useRef(null);
   const startTimeRef = useRef(null);
@@ -188,6 +191,12 @@ export default function MapView({
       console.error('❌ Failed to add session checkpoint:', error);
     }
   }, [sessionId]);
+
+  const handleAchievementComplete = (achievement) => {
+    console.log('🎉 Achievement completed!', achievement);
+    setAchievementData(achievement);
+    setShowCelebration(true);
+  };
 
   // Check if user is near any building markers
   const checkProximityToBuildings = useCallback((userLat, userLng) => {
@@ -889,9 +898,18 @@ export default function MapView({
             elapsedTime={elapsedTime}
             targetHours={nearbyBuilding.targetHours}
             isVisible={showProgressBar}
+            onAchievementComplete={handleAchievementComplete}
           />
         </div>
       )}
+
+      {/* Celebration Modal */}
+      <CelebrationModal
+        isOpen={showCelebration}
+        onClose={() => setShowCelebration(false)}
+        locationName={achievementData?.locationName}
+        achievementData={achievementData}
+      />
     </div>
   );
 }
