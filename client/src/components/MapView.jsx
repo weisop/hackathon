@@ -103,8 +103,9 @@ export default function MapView({
   zoom = 13,
   height = "400px",
   showUserLocation = true,
-  onLocationUpdate = null
-  , markers = []
+  onLocationUpdate = null,
+  markers = [],
+  isPaused = false
 }) {
   const [userLocation, setUserLocation] = useState(null);
   const [locationHistory, setLocationHistory] = useState([]);
@@ -510,7 +511,7 @@ export default function MapView({
   // Stopwatch timer effect
   useEffect(() => {
     let interval;
-    if (locationStartTime) {
+    if (locationStartTime && !isPaused) {
       interval = setInterval(() => {
         setElapsedTime(Date.now() - locationStartTime);
       }, 1000);
@@ -518,7 +519,7 @@ export default function MapView({
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [locationStartTime]);
+  }, [locationStartTime, isPaused]);
 
   // Save shown achievements to localStorage whenever they change
   useEffect(() => {
@@ -538,6 +539,11 @@ export default function MapView({
 
   // Track position every 30 seconds with setInterval
   useEffect(() => {
+    // Don't start tracking if paused
+    if (isPaused) {
+      return;
+    }
+
     const options = {
       enableHighAccuracy: true,
       timeout: 15000,
@@ -612,7 +618,7 @@ export default function MapView({
     return () => {
       clearInterval(intervalId);
     };
-  }, [smoothLocation, onLocationUpdate, sessionId, nearbyBuilding, googleMapsConfigured]);
+  }, [smoothLocation, onLocationUpdate, sessionId, nearbyBuilding, googleMapsConfigured, isPaused]);
 
   return (
     <div className="map-container relative">

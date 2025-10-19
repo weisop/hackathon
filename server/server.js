@@ -1401,10 +1401,3 @@ const startServer = async () => {
 
 // Start the server
 startServer();
-
-// Start server
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
-  console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
-  console.log(`📝 Items API: http://localhost:${PORT}/api/items`);
-});
