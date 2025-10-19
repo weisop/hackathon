@@ -625,14 +625,13 @@ export default function MapView({
         <div className="text-red-500 text-sm mb-4 p-2 bg-red-50 rounded">{error}</div>
       )}
 
-
-        {/* Enhanced Location Data */}
-        {enhancedLocationData && (
-          <div className="bg-white p-4 rounded border mb-4">
-            <h4 className="font-semibold text-gray-800 mb-3 flex items-center">
-              🌟 Enhanced Location Data
-              {isLoadingEnhanced && <span className="ml-2 text-blue-500">Loading...</span>}
-            </h4>
+      {/* Enhanced Location Data */}
+      {enhancedLocationData && (
+        <div className="bg-white p-4 rounded border mb-4">
+          <h4 className="font-semibold text-gray-800 mb-3 flex items-center">
+            🌟 Enhanced Location Data
+            {isLoadingEnhanced && <span className="ml-2 text-blue-500">Loading...</span>}
+          </h4>
             
             {enhancedLocationData.address && (
               <div className="mb-3">
@@ -668,8 +667,6 @@ export default function MapView({
             )}
           </div>
         )}
-
-      </div>
 
       <div style={{ height, width: '100%' }}>
         <MapContainer
