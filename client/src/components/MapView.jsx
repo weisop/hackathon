@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, Circle } from 'react-leaflet';
 import L from 'leaflet';
 import './MapView.css';
+import { apiService } from '../services/api';
 
 // Optional: custom icon fix for default markers in React
 delete L.Icon.Default.prototype._getIconUrl;
@@ -28,7 +29,7 @@ const MapUpdater = ({ location }) => {
 };
 
 export default function MapView({ 
-  center = [47.6062, -122.3321], // Default to Seattle
+  center = [47.6567, -122.3066], // Default to Seattle
   zoom = 13,
   height = "400px",
   showUserLocation = true,
@@ -45,9 +46,11 @@ export default function MapView({
     trackingDuration: 0
   });
   const [precisionMode, setPrecisionMode] = useState('high');
-  const [accuracyFilter, setAccuracyFilter] = useState(50); // meters
-  const [showAccuracyCircle, setShowAccuracyCircle] = useState(true);
   const [smoothedLocation, setSmoothedLocation] = useState(null);
+  const [enhancedLocationData, setEnhancedLocationData] = useState(null);
+  const [nearbyPlaces, setNearbyPlaces] = useState([]);
+  const [isLoadingEnhanced, setIsLoadingEnhanced] = useState(false);
+  const [googleMapsConfigured, setGoogleMapsConfigured] = useState(false);
   
   const watchIdRef = useRef(null);
   const startTimeRef = useRef(null);
@@ -141,14 +144,9 @@ export default function MapView({
           speed: position.coords.speed
         };
         
-        // Apply accuracy filter
-        if (location.accuracy <= accuracyFilter) {
-          setUserLocation(location);
-          setError(null);
-          onLocationUpdate?.(location);
-        } else {
-          setError(`Location accuracy (${location.accuracy.toFixed(1)}m) exceeds filter (${accuracyFilter}m)`);
-        }
+        setUserLocation(location);
+        setError(null);
+        onLocationUpdate?.(location);
       },
       (error) => {
         setError('Failed to get location: ' + error.message);
@@ -173,6 +171,43 @@ export default function MapView({
       };
     });
   }, []);
+
+  // Get enhanced location data from Google Maps
+  const getEnhancedLocationData = useCallback(async (latitude, longitude) => {
+    if (!googleMapsConfigured) return;
+    
+    setIsLoadingEnhanced(true);
+    try {
+      const enhancedData = await apiService.getEnhancedLocation(latitude, longitude);
+      if (enhancedData.success) {
+        setEnhancedLocationData(enhancedData);
+        setNearbyPlaces(enhancedData.nearbyPlaces || []);
+        console.log('🌟 Enhanced location data loaded:', enhancedData);
+      }
+    } catch (error) {
+      console.error('❌ Failed to get enhanced location data:', error);
+    } finally {
+      setIsLoadingEnhanced(false);
+    }
+  }, [googleMapsConfigured]);
+
+  // Check Google Maps API configuration
+  const checkGoogleMapsConfig = useCallback(async () => {
+    try {
+      const config = await apiService.checkLocationConfig();
+      setGoogleMapsConfigured(config.configured);
+      if (!config.configured) {
+        console.warn('⚠️ Google Maps API not configured:', config.message);
+      }
+    } catch (error) {
+      console.error('❌ Failed to check Google Maps config:', error);
+    }
+  }, []);
+
+  // Initialize Google Maps configuration check
+  useEffect(() => {
+    checkGoogleMapsConfig();
+  }, [checkGoogleMapsConfig]);
 
   // Start/stop location tracking
   const toggleTracking = () => {
@@ -206,33 +241,33 @@ export default function MapView({
             speed: position.coords.speed
           };
           
-          // Apply accuracy filter
-          if (location.accuracy <= accuracyFilter) {
-            // Apply smoothing if enabled
-            const smoothed = smoothLocation(location, locationBufferRef.current);
-            locationBufferRef.current = [...locationBufferRef.current, location].slice(-5);
-            
-            setUserLocation(smoothed);
-            setSmoothedLocation(smoothed);
-            
-            // Add to history with distance calculation
-            setLocationHistory(prev => {
-              const newHistory = [...prev];
-              if (prev.length > 0) {
-                const lastLocation = prev[prev.length - 1];
-                const distance = calculateDistance(
-                  lastLocation.latitude, lastLocation.longitude,
-                  location.latitude, location.longitude
-                );
-                location.distanceFromLast = distance;
-              }
-              return [...newHistory.slice(-99), location]; // Keep last 100 locations
-            });
-            
-            updateTrackingStats(location);
-            onLocationUpdate?.(smoothed);
-          } else {
-            setError(`Location accuracy (${location.accuracy.toFixed(1)}m) exceeds filter (${accuracyFilter}m)`);
+          // Apply smoothing if enabled
+          const smoothed = smoothLocation(location, locationBufferRef.current);
+          locationBufferRef.current = [...locationBufferRef.current, location].slice(-5);
+          
+          setUserLocation(smoothed);
+          setSmoothedLocation(smoothed);
+          
+          // Add to history with distance calculation
+          setLocationHistory(prev => {
+            const newHistory = [...prev];
+            if (prev.length > 0) {
+              const lastLocation = prev[prev.length - 1];
+              const distance = calculateDistance(
+                lastLocation.latitude, lastLocation.longitude,
+                location.latitude, location.longitude
+              );
+              location.distanceFromLast = distance;
+            }
+            return [...newHistory.slice(-99), location]; // Keep last 100 locations
+          });
+          
+          updateTrackingStats(location);
+          onLocationUpdate?.(smoothed);
+          
+          // Get enhanced location data if Google Maps is configured
+          if (googleMapsConfigured) {
+            getEnhancedLocationData(location.latitude, location.longitude);
           }
         },
         (error) => {
@@ -248,7 +283,7 @@ export default function MapView({
         watchIdRef.current = null;
       }
     };
-  }, [isTracking, precisionMode, accuracyFilter, smoothLocation, updateTrackingStats, onLocationUpdate]);
+  }, [isTracking, precisionMode, smoothLocation, updateTrackingStats, onLocationUpdate]);
 
   return (
     <div className="map-container">
@@ -269,39 +304,7 @@ export default function MapView({
             </select>
           </div>
 
-          {/* Accuracy Filter */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Max Accuracy: {accuracyFilter}m
-            </label>
-            <input
-              type="range"
-              min="1"
-              max="100"
-              value={accuracyFilter}
-              onChange={(e) => setAccuracyFilter(parseInt(e.target.value))}
-              className="w-full"
-            />
-            <div className="text-xs text-gray-500 mt-1">
-              Only locations with accuracy ≤ {accuracyFilter}m will be accepted
-            </div>
-          </div>
 
-          {/* Display Options */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Display Options</label>
-            <div className="space-y-2">
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={showAccuracyCircle}
-                  onChange={(e) => setShowAccuracyCircle(e.target.checked)}
-                  className="mr-2"
-                />
-                Show accuracy circle
-              </label>
-            </div>
-          </div>
         </div>
 
         {/* Tracking Controls */}
@@ -373,6 +376,64 @@ export default function MapView({
             </div>
           </div>
         )}
+
+        {/* Enhanced Location Data */}
+        {enhancedLocationData && (
+          <div className="bg-white p-4 rounded border mb-4">
+            <h4 className="font-semibold text-gray-800 mb-3 flex items-center">
+              🌟 Enhanced Location Data
+              {isLoadingEnhanced && <span className="ml-2 text-blue-500">Loading...</span>}
+            </h4>
+            
+            {enhancedLocationData.address && (
+              <div className="mb-3">
+                <div className="text-sm font-medium text-gray-700">Address:</div>
+                <div className="text-sm text-gray-600">{enhancedLocationData.address}</div>
+              </div>
+            )}
+
+            {enhancedLocationData.addressComponents && (
+              <div className="mb-3">
+                <div className="text-sm font-medium text-gray-700">Location Details:</div>
+                <div className="text-sm text-gray-600">
+                  {enhancedLocationData.addressComponents.city && `${enhancedLocationData.addressComponents.city}, `}
+                  {enhancedLocationData.addressComponents.state && `${enhancedLocationData.addressComponents.state} `}
+                  {enhancedLocationData.addressComponents.country && enhancedLocationData.addressComponents.country}
+                </div>
+              </div>
+            )}
+
+            {nearbyPlaces.length > 0 && (
+              <div>
+                <div className="text-sm font-medium text-gray-700 mb-2">Nearby Places:</div>
+                <div className="max-h-32 overflow-y-auto">
+                  {nearbyPlaces.slice(0, 5).map((place, index) => (
+                    <div key={index} className="text-sm text-gray-600 py-1 border-b border-gray-100 last:border-b-0">
+                      <div className="font-medium">{place.name}</div>
+                      <div className="text-xs text-gray-500">{place.vicinity}</div>
+                      {place.rating && <div className="text-xs text-yellow-600">⭐ {place.rating}</div>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Google Maps Configuration Status */}
+        <div className="mb-4">
+          <div className={`px-3 py-2 rounded text-sm ${
+            googleMapsConfigured 
+              ? 'bg-green-100 text-green-800 border border-green-200' 
+              : 'bg-yellow-100 text-yellow-800 border border-yellow-200'
+          }`}>
+            {googleMapsConfigured ? (
+              '✅ Google Maps API configured - Enhanced features available'
+            ) : (
+              '⚠️ Google Maps API not configured - Basic location tracking only'
+            )}
+          </div>
+        </div>
       </div>
 
       <div style={{ height, width: '100%' }}>
@@ -415,20 +476,6 @@ export default function MapView({
                 </Popup>
               </Marker>
               
-              {/* Accuracy circle */}
-              {showAccuracyCircle && (
-                <Circle
-                  center={[userLocation.latitude, userLocation.longitude]}
-                  radius={userLocation.accuracy}
-                  pathOptions={{
-                    color: '#3B82F6',
-                    fillColor: '#3B82F6',
-                    fillOpacity: 0.1,
-                    weight: 2,
-                    dashArray: '5, 5'
-                  }}
-                />
-              )}
             </>
           )}
 
