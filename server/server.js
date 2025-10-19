@@ -567,7 +567,7 @@ app.post('/api/location/track', requireAuth, async (req, res) => {
         console.warn('⚠️ location_tracks table does not exist, location tracking disabled');
         return res.json({ 
           message: 'Location received (tracking disabled)', 
-          warning: 'location_tracks table not found - location tracking is disabled' 
+          warning: 'location_tracks table not found - please apply the database schema to enable location tracking' 
         });
       }
       throw error;

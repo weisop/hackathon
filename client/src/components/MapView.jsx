@@ -427,22 +427,14 @@ export default function MapView({
       });
       console.log('💾 Location saved to backend');
     } catch (error) {
-      console.error('Error saving location:', {
-        message: error.message,
-        status: error.response?.status,
-        data: error.response?.data,
-        location: {
-          latitude: location.latitude,
-          longitude: location.longitude,
-          accuracy: location.accuracy
-        }
-      });
-      
       // Check if it's an authentication error
       if (error.response?.status === 401) {
         console.warn('⚠️ Location tracking requires authentication. Please log in.');
       } else if (error.response?.status === 404) {
         console.warn('⚠️ Location tracking endpoint not found. Server may not be running.');
+      } else if (error.response?.data?.warning) {
+        // This is a warning from the server (e.g., table doesn't exist)
+        console.log('ℹ️ Location tracking:', error.response.data.warning);
       } else {
         console.warn('⚠️ Location tracking failed:', error.message);
       }
