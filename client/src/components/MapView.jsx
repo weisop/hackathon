@@ -6,6 +6,32 @@ import { apiService } from '../services/api';
 import LocationProgressBar from './LocationProgressBar';
 import LocationLevelProgress from './LocationLevelProgress';
 import CelebrationModal from './CelebrationModal';
+
+const nancyIcon = L.divIcon({
+  html: `
+    <div style="display:flex;flex-direction:column;align-items:center;">
+      <img src="/Nancy.png" style="width:60px;height:60px;border-radius:50%;border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3);" />
+      <span style="font-size:12px;font-weight:600;color:#2c3e50;background:rgba(146, 168, 219, 0.8);border-radius:8px;padding:2px 6px;margin-top:2px;">Alicia</span>
+    </div>
+  `,
+  className: '',
+  iconSize: [60, 70],
+  iconAnchor: [30, 70],
+  popupAnchor: [0, -60]
+});
+
+const aliciaIcon = L.divIcon({
+  html: `
+    <div style="display:flex;flex-direction:column;align-items:center;">
+      <img src="/Alicia.png" style="width:60px;height:60px;border-radius:50%;border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3);" />
+      <span style="font-size:12px;font-weight:600;color:#2c3e50;background:rgba(233, 160, 160, 0.8);border-radius:8px;padding:2px 6px;margin-top:2px;">Nancy</span>
+    </div>
+  `,
+  className: '',
+  iconSize: [60, 70],
+  iconAnchor: [30, 70],
+  popupAnchor: [0, -60]
+});
 // import 'leaflet.tilelayer.colorfilter';
 
 //   const fantasyMapFilter = [
@@ -68,11 +94,11 @@ const FitBounds = ({ markers = [], userLocation }) => {
 // Return a divIcon based on type (coffee / library / default)
 const getMarkerIcon = (type, size = 28) => {
   const emoji = type === 'library' ? '📚' : (type === 'coffee' ? '☕' : '📍');
-  const html = `<div style="display:flex;align-items:center;justify-content:center;width:${size}px;height:${size}px;border-radius:50%;background:#ffffff;border:2px solid rgba(0,0,0,0.08);box-shadow:0 1px 3px rgba(0,0,0,0.2);font-size:${Math.floor(size*0.6)}px">${emoji}</div>`;
-  return L.divIcon({ html, className: 'custom-emoji-icon', iconSize: [size, size], iconAnchor: [size/2, size/2] });
+  const html = `<div style="display:flex;align-items:center;justify-content:center;width:${size}px;height:${size}px;border-radius:50%;background:#ffffff;border:2px solid rgba(0,0,0,0.08);box-shadow:0 1px 3px rgba(0,0,0,0.2);font-size:${Math.floor(size * 0.6)}px">${emoji}</div>`;
+  return L.divIcon({ html, className: 'custom-emoji-icon', iconSize: [size, size], iconAnchor: [size / 2, size / 2] });
 };
 
-export default function MapView({ 
+export default function MapView({
   center = [47.6567, -122.3066], // Default to Seattle
   zoom = 13,
   height = "400px",
@@ -118,7 +144,7 @@ export default function MapView({
       return new Set();
     }
   });
-  
+
   const watchIdRef = useRef(null);
   const startTimeRef = useRef(null);
   const locationBufferRef = useRef([]);
@@ -126,15 +152,15 @@ export default function MapView({
   // Location smoothing algorithm (moving average)
   const smoothLocation = useCallback((newLocation, buffer) => {
     const updatedBuffer = [...buffer, newLocation].slice(-5); // Keep last 5 locations
-    
+
     if (updatedBuffer.length < 2) {
       return newLocation;
     }
-    
+
     const avgLat = updatedBuffer.reduce((sum, loc) => sum + loc.latitude, 0) / updatedBuffer.length;
     const avgLng = updatedBuffer.reduce((sum, loc) => sum + loc.longitude, 0) / updatedBuffer.length;
     const avgAccuracy = updatedBuffer.reduce((sum, loc) => sum + loc.accuracy, 0) / updatedBuffer.length;
-    
+
     return {
       latitude: avgLat,
       longitude: avgLng,
@@ -147,15 +173,15 @@ export default function MapView({
   // Calculate distance between two points
   const calculateDistance = (lat1, lon1, lat2, lon2) => {
     const R = 6371e3; // Earth's radius in meters
-    const φ1 = lat1 * Math.PI/180;
-    const φ2 = lat2 * Math.PI/180;
-    const Δφ = (lat2-lat1) * Math.PI/180;
-    const Δλ = (lon2-lon1) * Math.PI/180;
+    const φ1 = lat1 * Math.PI / 180;
+    const φ2 = lat2 * Math.PI / 180;
+    const Δφ = (lat2 - lat1) * Math.PI / 180;
+    const Δλ = (lon2 - lon1) * Math.PI / 180;
 
-    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-              Math.cos(φ1) * Math.cos(φ2) *
-              Math.sin(Δλ/2) * Math.sin(Δλ/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+      Math.cos(φ1) * Math.cos(φ2) *
+      Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
     return R * c; // Distance in meters
   };
@@ -215,17 +241,17 @@ export default function MapView({
   const handleAchievementComplete = (achievement) => {
     // Create a unique key for this achievement
     const achievementKey = `${achievement.locationName}-${achievement.level || 1}-${Math.floor(Date.now() / 1000)}`;
-    
+
     // Check if this achievement has already been shown
     if (shownAchievements.has(achievementKey)) {
       console.log('🎉 Achievement already shown, skipping:', achievementKey);
       return;
     }
-    
+
     console.log('🎉 Achievement completed!', achievement);
     setAchievementData(achievement);
     setShowCelebration(true);
-    
+
     // Mark this achievement as shown
     setShownAchievements(prev => new Set([...prev, achievementKey]));
   };
@@ -233,13 +259,13 @@ export default function MapView({
   const handleLevelComplete = (levelData) => {
     // Create a unique key for this level achievement
     const achievementKey = `${levelData.locationName}-level-${levelData.level}-${Math.floor(Date.now() / 1000)}`;
-    
+
     // Check if this achievement has already been shown
     if (shownAchievements.has(achievementKey)) {
       console.log('🎉 Level achievement already shown, skipping:', achievementKey);
       return;
     }
-    
+
     console.log('🎉 Level completed!', levelData);
     setAchievementData({
       locationName: levelData.locationName,
@@ -249,7 +275,7 @@ export default function MapView({
       level: levelData.level
     });
     setShowCelebration(true);
-    
+
     // Mark this achievement as shown
     setShownAchievements(prev => new Set([...prev, achievementKey]));
   };
@@ -281,11 +307,11 @@ export default function MapView({
     if (!Array.isArray(markers) || markers.length === 0) return;
 
     const PROXIMITY_THRESHOLD = 50; // 50 meters threshold for being "near" a building
-    
+
     for (const marker of markers) {
       if (marker.latitude && marker.longitude) {
         const distance = calculateDistance(userLat, userLng, marker.latitude, marker.longitude);
-        
+
         if (distance <= PROXIMITY_THRESHOLD) {
           // If we're at the same building, don't reset the timer
           if (nearbyBuilding && nearbyBuilding.id === marker.id) {
@@ -293,26 +319,26 @@ export default function MapView({
             setShowYouAreHereButton(true);
             return;
           }
-          
+
           // New building or first time at this building - start timer and session
           setNearbyBuilding(marker);
           setShowYouAreHereButton(true);
           setLocationStartTime(Date.now());
           setElapsedTime(0);
           setShowProgressBar(true);
-          
+
           // Start database session
           startLocationSession(marker);
           return;
         }
       }
     }
-    
+
     // If no nearby building found, hide the button and stop timer
     if (nearbyBuilding) {
       endLocationSession();
     }
-    
+
     setNearbyBuilding(null);
     setShowYouAreHereButton(false);
     setLocationStartTime(null);
@@ -326,7 +352,7 @@ export default function MapView({
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     const seconds = totalSeconds % 60;
-    
+
     if (hours > 0) {
       return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     } else {
@@ -372,7 +398,7 @@ export default function MapView({
     }
 
     const options = getPrecisionOptions(precisionMode);
-    
+
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const location = {
@@ -384,13 +410,13 @@ export default function MapView({
           heading: position.coords.heading,
           speed: position.coords.speed
         };
-        
+
         setUserLocation(location);
         setError(null);
-        
+
         // Check proximity to buildings
         checkProximityToBuildings(location.latitude, location.longitude);
-        
+
         onLocationUpdate?.(location);
       },
       (error) => {
@@ -407,7 +433,7 @@ export default function MapView({
       const newAverageAccuracy = ((prev.averageAccuracy * prev.totalLocations) + newLocation.accuracy) / totalLocations;
       const newBestAccuracy = Math.min(prev.bestAccuracy, newLocation.accuracy);
       const trackingDuration = startTimeRef.current ? Date.now() - startTimeRef.current : 0;
-      
+
       return {
         totalLocations,
         averageAccuracy: newAverageAccuracy,
@@ -420,7 +446,7 @@ export default function MapView({
   // Get enhanced location data
   const getEnhancedLocationData = useCallback(async (latitude, longitude) => {
     if (!googleMapsConfigured) return;
-    
+
     setIsLoadingEnhanced(true);
     try {
       const enhancedData = await apiService.getEnhancedLocation(latitude, longitude);
@@ -485,27 +511,27 @@ export default function MapView({
         // Check authentication first
         const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
         console.log('🔐 Auth token available:', !!token);
-        
+
         const activeSessions = await apiService.getActiveLocationSessions();
         if (activeSessions && activeSessions.length > 0) {
           const session = activeSessions[0]; // Get the most recent active session
           setActiveSession(session);
           setSessionId(session.id);
-          
+
           // Find the corresponding marker
           const marker = markers.find(m => m.id === session.location_id);
           if (marker) {
             setNearbyBuilding(marker);
             setShowYouAreHereButton(true);
             setShowProgressBar(true);
-            
+
             // Calculate elapsed time since session start
             const sessionStartTime = new Date(session.session_start_time).getTime();
             const currentTime = Date.now();
             const elapsed = currentTime - sessionStartTime;
             setLocationStartTime(sessionStartTime);
             setElapsedTime(elapsed);
-            
+
             console.log('🔄 Recovered active session:', session);
           }
         } else {
@@ -570,7 +596,7 @@ export default function MapView({
   useEffect(() => {
     if (isTracking) {
       const options = getPrecisionOptions(precisionMode);
-      
+
       watchIdRef.current = navigator.geolocation.watchPosition(
         (position) => {
           const location = {
@@ -582,22 +608,22 @@ export default function MapView({
             heading: position.coords.heading,
             speed: position.coords.speed
           };
-          
+
           // Apply smoothing if enabled
           const smoothed = smoothLocation(location, locationBufferRef.current);
           locationBufferRef.current = [...locationBufferRef.current, location].slice(-5);
-          
+
           setUserLocation(smoothed);
           setSmoothedLocation(smoothed);
-          
+
           // Check proximity to buildings
           checkProximityToBuildings(smoothed.latitude, smoothed.longitude);
-          
+
           // Add checkpoint to active session if we're at a location
           if (sessionId && nearbyBuilding) {
             addSessionCheckpoint(smoothed.latitude, smoothed.longitude, smoothed.accuracy);
           }
-          
+
           // Add to history with distance calculation
           setLocationHistory(prev => {
             const newHistory = [...prev];
@@ -611,10 +637,10 @@ export default function MapView({
             }
             return [...newHistory.slice(-99), location]; // Keep last 100 locations
           });
-          
+
           updateTrackingStats(location);
           onLocationUpdate?.(smoothed);
-          
+
           // Get enhanced location data if API is configured
           if (googleMapsConfigured) {
             getEnhancedLocationData(location.latitude, location.longitude);
@@ -664,15 +690,14 @@ export default function MapView({
         <div className="flex flex-wrap gap-2 mb-4">
           <button
             onClick={toggleTracking}
-            className={`px-4 py-2 rounded text-sm font-medium ${
-              isTracking 
-                ? 'bg-red-500 hover:bg-red-600 text-white' 
-                : 'bg-blue-500 hover:bg-blue-600 text-white'
-            }`}
+            className={`px-4 py-2 rounded text-sm font-medium ${isTracking
+              ? 'bg-red-500 hover:bg-red-600 text-white'
+              : 'bg-blue-500 hover:bg-blue-600 text-white'
+              }`}
           >
             {isTracking ? 'Stop Tracking' : 'Start Precise Tracking'}
           </button>
-          
+
           <button
             onClick={getCurrentLocation}
             className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded text-sm font-medium"
@@ -749,7 +774,7 @@ export default function MapView({
               🌟 Enhanced Location Data
               {isLoadingEnhanced && <span className="ml-2 text-blue-500">Loading...</span>}
             </h4>
-            
+
             {enhancedLocationData.address && (
               <div className="mb-3">
                 <div className="text-sm font-medium text-gray-700">Address:</div>
@@ -797,11 +822,19 @@ export default function MapView({
             url="https://tiles.stadiamaps.com/tiles/stamen_watercolor/{z}/{x}/{y}{r}.jpg"
             attribution='&copy; <a href="https://stadiamaps.com/">Stadia Maps</a> | Map tiles by <a href="https://stamen.com/">Stamen Design</a>, under CC BY 3.0. Data by OpenStreetMap, under ODbL.'
           />
-          
+
+          <Marker position={[47.656, -122.3020]} icon={nancyIcon}  zIndexOffset={1000}>
+                <Popup><strong>Nancy</strong><br />📍 HUB, UW Seattle</Popup>
+          </Marker>
+
+          <Marker position={[47.6594, -122.3051]} icon={aliciaIcon}  zIndexOffset={1000}>
+            <Popup><strong>Alicia</strong><br />📍 HUB, UW Seattle</Popup>
+          </Marker>
+
           {/* User's current location marker */}
           {showUserLocation && userLocation && (
             <>
-              <Marker 
+              <Marker
                 position={[userLocation.latitude, userLocation.longitude]}
                 icon={L.divIcon({
                   className: 'user-location-marker',
@@ -831,7 +864,8 @@ export default function MapView({
                   </div>
                 </Popup>
               </Marker>
-              
+
+
               {/* "You are here" button when near a building */}
               {showYouAreHereButton && nearbyBuilding && (
                 <Marker
@@ -872,7 +906,7 @@ export default function MapView({
                         <h4 className="font-semibold text-green-800 text-base mb-1">{nearbyBuilding.name}</h4>
                         <p className="text-sm text-green-700">You're currently at this location</p>
                       </div>
-                      
+
                       {/* Stopwatch Section */}
                       <div className="mt-3 bg-blue-50 p-3 rounded-lg border border-blue-200">
                         <div className="flex items-center justify-between">
@@ -890,7 +924,7 @@ export default function MapView({
                           </div>
                         </div>
                       </div>
-                      
+
                       <div className="mt-3 text-xs text-gray-500">
                         <p>📍 Location: {userLocation.latitude.toFixed(6)}, {userLocation.longitude.toFixed(6)}</p>
                         <p>🎯 Accuracy: {userLocation.accuracy.toFixed(1)}m</p>
@@ -950,7 +984,7 @@ export default function MapView({
               icon={L.divIcon({
                 className: 'history-marker',
                 html: `
-                  <div title="Point ${index + 1}" style="width:8px;height:8px;background:#10B981;border-radius:50%;opacity:${(Math.max(20, 100 - index * 2)/100).toFixed(2)};">
+                  <div title="Point ${index + 1}" style="width:8px;height:8px;background:#10B981;border-radius:50%;opacity:${(Math.max(20, 100 - index * 2) / 100).toFixed(2)};">
                   </div>
                 `,
                 iconSize: [8, 8],
