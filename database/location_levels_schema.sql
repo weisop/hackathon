@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS location_level_requirements (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   location_id TEXT NOT NULL,
   level INTEGER NOT NULL,
-  required_time_hours DECIMAL(5, 2) NOT NULL,
+  required_time_hours DECIMAL(8, 3) NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   UNIQUE(location_id, level)
 );
@@ -32,8 +32,8 @@ CREATE TABLE IF NOT EXISTS location_level_achievements (
   location_id TEXT NOT NULL,
   location_name TEXT NOT NULL,
   level INTEGER NOT NULL,
-  required_time_hours DECIMAL(5, 2) NOT NULL,
-  achieved_time_hours DECIMAL(5, 2) NOT NULL,
+  required_time_hours DECIMAL(8, 3) NOT NULL,
+  achieved_time_hours DECIMAL(8, 3) NOT NULL,
   achievement_date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

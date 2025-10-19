@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS location_sessions (
   location_name TEXT NOT NULL, -- Human-readable name (e.g., 'HUB', 'Suzallo Library')
   latitude DECIMAL(10, 8) NOT NULL,
   longitude DECIMAL(11, 8) NOT NULL,
-  target_hours DECIMAL(4, 2) NOT NULL, -- Target duration in hours
+  target_hours DECIMAL(8, 3) NOT NULL, -- Target duration in hours
   session_start_time TIMESTAMP WITH TIME ZONE NOT NULL,
   session_end_time TIMESTAMP WITH TIME ZONE, -- NULL if session is still active
   total_duration_seconds INTEGER DEFAULT 0, -- Total time spent at this location
@@ -37,8 +37,8 @@ CREATE TABLE IF NOT EXISTS location_achievements (
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
   location_id TEXT NOT NULL,
   location_name TEXT NOT NULL,
-  target_hours DECIMAL(4, 2) NOT NULL,
-  achieved_hours DECIMAL(4, 2) NOT NULL,
+  target_hours DECIMAL(8, 3) NOT NULL,
+  achieved_hours DECIMAL(8, 3) NOT NULL,
   achievement_date TIMESTAMP WITH TIME ZONE NOT NULL,
   is_milestone BOOLEAN DEFAULT false, -- e.g., first time reaching target
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
