@@ -6,7 +6,8 @@ const LocationLevelProgress = ({
   locationName, 
   elapsedTime, 
   isVisible = true,
-  onLevelComplete = null
+  onLevelComplete = null,
+  onLevelAdvancement = null
 }) => {
   const [userLevel, setUserLevel] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -67,11 +68,29 @@ const LocationLevelProgress = ({
     }
   };
 
+  // Auto-update time when elapsed time changes
+  useEffect(() => {
+    if (isVisible && locationId && elapsedTime > 0) {
+      const timeSpentSeconds = Math.floor(elapsedTime / 1000);
+      updateLocationTime(timeSpentSeconds);
+    }
+  }, [elapsedTime, isVisible, locationId]);
+
   const advanceToNextLevel = async () => {
     try {
       const result = await apiService.advanceToNextLevel(locationId, locationName);
       setUserLevel(result.level);
       setLevelCompleted(false);
+      
+      // Notify parent component about level advancement
+      if (onLevelAdvancement) {
+        onLevelAdvancement({
+          locationId,
+          locationName,
+          newLevel: result.level.current_level,
+          previousLevel: result.level.current_level - 1
+        });
+      }
     } catch (error) {
       console.error('Error advancing level:', error);
     }
@@ -167,7 +186,7 @@ const LocationLevelProgress = ({
           <span>{Math.round(progressPercentage)}% complete</span>
           <span>
             {progressPercentage >= 100 
-              ? '✅ Level Complete!' 
+              ? '🎉 Level Complete!' 
               : `${formatTime(requiredTime - elapsedHours)} remaining`
             }
           </span>
@@ -176,20 +195,27 @@ const LocationLevelProgress = ({
 
       {/* Level Completion */}
       {levelCompleted && (
-        <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg p-3 mb-3">
+        <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg p-4 mb-3">
           <div className="text-center">
-            <div className="text-lg font-semibold text-yellow-800 mb-1">
-              🎉 Level {currentLevel} Complete!
+            <div className="text-xl font-bold text-green-800 mb-2 flex items-center justify-center space-x-2">
+              <span>🎉</span>
+              <span>Level {currentLevel} Complete!</span>
+              <span>🎉</span>
             </div>
-            <p className="text-sm text-yellow-700 mb-2">
-              Ready to advance to Level {currentLevel + 1}?
+            <p className="text-sm text-green-700 mb-3">
+              You've mastered this location! Ready for the next challenge?
             </p>
-            <button
-              onClick={advanceToNextLevel}
-              className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all transform hover:scale-105"
-            >
-              Advance to Level {currentLevel + 1}
-            </button>
+            <div className="space-y-2">
+              <div className="text-xs text-gray-600">
+                Next level requires: {formatTime(calculateLevelTime(currentLevel + 1))}
+              </div>
+              <button
+                onClick={advanceToNextLevel}
+                className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white px-6 py-3 rounded-lg font-semibold transition-all transform hover:scale-105 shadow-lg"
+              >
+                🚀 Advance to Level {currentLevel + 1}
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -212,6 +212,13 @@ export default function MapView({
     setShowCelebration(true);
   };
 
+  const handleLevelAdvancement = (levelData) => {
+    console.log('🚀 Level advanced!', levelData);
+    // Reset the celebration state to allow for new level celebrations
+    setShowCelebration(false);
+    setAchievementData(null);
+  };
+
   // Check if user is near any building markers
   const checkProximityToBuildings = useCallback((userLat, userLng) => {
     if (!Array.isArray(markers) || markers.length === 0) return;
@@ -915,6 +922,7 @@ export default function MapView({
             elapsedTime={elapsedTime}
             isVisible={showProgressBar}
             onLevelComplete={handleLevelComplete}
+            onLevelAdvancement={handleLevelAdvancement}
           />
         </div>
       )}
