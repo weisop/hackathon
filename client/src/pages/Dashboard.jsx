@@ -3,11 +3,13 @@ import { useAuth } from '../contexts/AuthContext';
 import { apiService } from '../services/api';
 import MapView from '../components/MapView';
 import FriendsList from '../components/FriendsList';
+import FriendsDebugger from '../components/FriendsDebugger';
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
   const [serverStatus, setServerStatus] = useState('unknown');
   const [showFriends, setShowFriends] = useState(false);
+  const [showDebugger, setShowDebugger] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
   // Demo markers for testing marker rendering on the map
   // Coordinates provided by user (first converted from DMS to decimal):
@@ -78,6 +80,12 @@ const Dashboard = () => {
               >
                 {showFriends ? 'Hide Friends' : 'Show Friends'}
               </button>
+              <button
+                onClick={() => setShowDebugger(!showDebugger)}
+                className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+              >
+                {showDebugger ? 'Hide Debugger' : '🔧 Debug Friends'}
+              </button>
               <span className="text-sm text-gray-700">Welcome, {user?.firstName || user?.name || 'User'}!</span>
             </div>
           </div>
@@ -113,6 +121,26 @@ const Dashboard = () => {
             </div>
             <div className="p-6">
               <FriendsList />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Friends Debugger Modal */}
+      {showDebugger && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg max-w-6xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center p-6 border-b">
+              <h2 className="text-xl font-semibold text-gray-900">🔧 Friends System Debugger</h2>
+              <button
+                onClick={() => setShowDebugger(false)}
+                className="text-gray-500 hover:text-gray-700 text-2xl"
+              >
+                ×
+              </button>
+            </div>
+            <div className="p-6">
+              <FriendsDebugger />
             </div>
           </div>
         </div>
