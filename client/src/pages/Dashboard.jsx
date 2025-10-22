@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { apiService } from '../services/api';
 import MapView from '../components/MapView';
@@ -14,6 +14,7 @@ const Dashboard = () => {
   const [serverStatus, setServerStatus] = useState('unknown');
   const [showFriends, setShowFriends] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  const lastLocationUpdateRef = useRef(0); // Track last location update time
   // Friends functionality temporarily disabled
   // const [showDebugger, setShowDebugger] = useState(false);
   
@@ -86,6 +87,13 @@ const Dashboard = () => {
   };
 
   const handleLocationUpdate = (location) => {
+    // Throttle location updates to once every 3 seconds
+    const now = Date.now();
+    if (now - lastLocationUpdateRef.current < 3000) {
+      return; // Skip this update
+    }
+    
+    lastLocationUpdateRef.current = now;
     setUserLocation(location);
     console.log('Location updated:', location);
   };

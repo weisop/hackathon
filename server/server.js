@@ -964,11 +964,26 @@ app.get('/api/location/sharing', requireAuth, async (req, res) => {
 
 // Start a new location session
 app.post('/api/location-sessions/start', requireAuth, async (req, res) => {
+  console.log('🚀 POST /api/location-sessions/start - Request received');
+  console.log('📦 Request body:', req.body);
+  console.log('👤 User ID:', req.user?.id);
+  
   try {
     const { locationId, locationName, latitude, longitude, targetHours } = req.body;
     
     if (!locationId || !locationName || !latitude || !longitude || !targetHours) {
-      return res.status(400).json({ error: 'Missing required fields' });
+      console.log('❌ Missing required fields:', {
+        hasLocationId: !!locationId,
+        hasLocationName: !!locationName,
+        hasLatitude: !!latitude,
+        hasLongitude: !!longitude,
+        hasTargetHours: !!targetHours
+      });
+      return res.status(400).json({ 
+        error: 'Missing required fields',
+        required: ['locationId', 'locationName', 'latitude', 'longitude', 'targetHours'],
+        received: { locationId, locationName, latitude, longitude, targetHours }
+      });
     }
 
     // Check if there's already an active session for this location
@@ -981,7 +996,12 @@ app.post('/api/location-sessions/start', requireAuth, async (req, res) => {
       .single();
 
     if (existingSession) {
-      return res.status(400).json({ error: 'Session already active for this location' });
+      console.log('ℹ️ Session already active, returning existing session:', existingSession.id);
+      return res.json({ 
+        message: 'Session already active', 
+        session: existingSession,
+        wasExisting: true 
+      });
     }
 
     // Create new session
@@ -1001,9 +1021,11 @@ app.post('/api/location-sessions/start', requireAuth, async (req, res) => {
       .single();
 
     if (error) throw error;
+    
+    console.log('✅ New location session created:', session.id);
     res.json({ message: 'Location session started', session });
   } catch (error) {
-    console.error('Error starting location session:', error);
+    console.error('❌ Error starting location session:', error);
     res.status(500).json({ error: error.message });
   }
 });

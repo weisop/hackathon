@@ -1,10 +1,11 @@
 // Port detection utility for dynamic API URL handling
 class PortDetector {
   constructor() {
-    this.commonPorts = [3001, 3000, 8000, 5000, 4000, 3002, 3003];
+    // Check most common port first (3001), then fallbacks
+    this.commonPorts = [3001, 3000, 8000];
     this.detectedPort = null;
     this.lastCheck = 0;
-    this.checkInterval = 5000; // Check every 5 seconds
+    this.checkInterval = 30000; // Check every 30 seconds (reduced frequency)
   }
 
   // Check if a specific port is available
@@ -37,25 +38,20 @@ class PortDetector {
       return `http://localhost:${this.detectedPort}`;
     }
 
-    console.log('🔍 Scanning for API server...');
+    console.log('🔍 Scanning for API server on common ports...');
     
-    // Check ports in parallel for faster detection
-    const portChecks = this.commonPorts.map(async (port) => {
+    // Check ports sequentially to reduce console noise
+    for (const port of this.commonPorts) {
       const isAvailable = await this.checkPort(port);
-      return isAvailable ? port : null;
-    });
-
-    const results = await Promise.all(portChecks);
-    const availablePort = results.find(port => port !== null);
-
-    if (availablePort) {
-      this.detectedPort = availablePort;
-      this.lastCheck = now;
-      console.log(`✅ API server found on port ${availablePort}`);
-      return `http://localhost:${availablePort}`;
+      if (isAvailable) {
+        this.detectedPort = port;
+        this.lastCheck = now;
+        console.log(`✅ API server found on port ${port}`);
+        return `http://localhost:${port}`;
+      }
     }
 
-    console.warn('⚠️ No API server found on common ports');
+    console.warn('⚠️ No API server found, using default port 3001');
     return 'http://localhost:3001'; // Fallback
   }
 

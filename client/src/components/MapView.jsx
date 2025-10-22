@@ -187,15 +187,17 @@ export default function MapView({
         locationName: marker.name,
         latitude: marker.latitude,
         longitude: marker.longitude,
-        targetHours: marker.targetHours || 4 // Default to 4 hours if not specified
+        targetHours: marker.targetHours || 0.167 // Default to 10 minutes if not specified
       };
 
+      console.log('🚀 Starting location session with data:', sessionData);
       const response = await apiService.startLocationSession(sessionData);
       setActiveSession(response.session);
       setSessionId(response.session.id);
       console.log('✅ Location session started:', response.session);
     } catch (error) {
-      // Silently handle session start errors - continue with local tracking
+      console.error('❌ Error starting session:', error.response?.data || error.message);
+      // Continue with local tracking even if server session fails
     }
   }, []);
 
