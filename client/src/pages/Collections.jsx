@@ -5,31 +5,38 @@ import { apiService } from '../services/api';
 const Collections = () => {
   const { user, signOut } = useAuth();
   const [achievements, setAchievements] = useState([]);
+  const [inProgressLocations, setInProgressLocations] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Helper function to calculate required time for a level
+  const calculateLevelTime = (level) => {
+    const baseTime = 0.167; // 10 minutes in hours
+    return baseTime * Math.pow(1.5, level - 1);
+  };
 
   useEffect(() => {
     const fetchAchievements = async () => {
       try {
         setLoading(true);
-        // Fetch both regular achievements and level achievements
-        const [regularAchievements, levelAchievements] = await Promise.all([
+        // Fetch achievements, level achievements, and all location levels (in-progress)
+        const [regularAchievements, levelAchievements, userLevels] = await Promise.all([
           apiService.getLocationAchievements().catch(() => []),
-          apiService.getLevelAchievements().catch(() => [])
+          apiService.getLevelAchievements().catch(() => []),
+          apiService.getAllUserLevels().catch(() => [])
         ]);
         
-        // Ensure both are arrays
+        // Ensure all are arrays
         const safeRegularAchievements = Array.isArray(regularAchievements) ? regularAchievements : [];
         const safeLevelAchievements = Array.isArray(levelAchievements) ? levelAchievements : [];
+        const safeUserLevels = Array.isArray(userLevels) ? userLevels : [];
         
-        console.log('📊 Fetched achievements:', { regularAchievements: safeRegularAchievements, levelAchievements: safeLevelAchievements });
-        console.log('📊 Level achievements details:', safeLevelAchievements.map(a => ({
-          location_name: a.location_name,
-          level: a.level,
-          required_time_hours: a.required_time_hours,
-          achieved_time_hours: a.achieved_time_hours
-        })));
+        console.log('📊 Fetched data:', { 
+          regularAchievements: safeRegularAchievements, 
+          levelAchievements: safeLevelAchievements,
+          userLevels: safeUserLevels 
+        });
         
-        // Combine and format achievements
+        // Combine and format completed achievements
         const allAchievements = [
           ...safeRegularAchievements.map(achievement => ({
             ...achievement,
@@ -45,32 +52,33 @@ const Collections = () => {
           }))
         ];
         
+        // Format in-progress locations (locations with time spent but not completed current level)
+        const inProgress = safeUserLevels
+          .filter(level => level.total_time_spent_seconds > 0)
+          .map(level => {
+            const requiredTime = calculateLevelTime(level.current_level);
+            const currentTime = level.total_time_spent_seconds / 3600; // Convert to hours
+            const progressPercent = Math.min((currentTime / requiredTime) * 100, 100);
+            
+            return {
+              id: level.location_id,
+              location_id: level.location_id,
+              location_name: level.location_name || 'Unknown Location',
+              current_level: level.current_level,
+              total_time_spent_seconds: level.total_time_spent_seconds,
+              required_time_hours: requiredTime,
+              current_time_hours: currentTime,
+              progress_percent: progressPercent,
+              is_completed: progressPercent >= 100
+            };
+          });
+        
         setAchievements(allAchievements);
+        setInProgressLocations(inProgress);
       } catch (error) {
         console.error('Error fetching achievements:', error);
-        // Set some demo data if API fails
-        setAchievements([
-          {
-            id: '1',
-            location_name: 'HUB',
-            target_hours: 0.167,
-            achieved_hours: 0.167,
-            achievement_date: new Date().toISOString(),
-            is_milestone: true,
-            type: 'level',
-            level: 1
-          },
-          {
-            id: '2',
-            location_name: 'Library',
-            target_hours: 0.25,
-            achieved_hours: 0.25,
-            achievement_date: new Date(Date.now() - 86400000).toISOString(),
-            is_milestone: false,
-            type: 'level',
-            level: 2
-          }
-        ]);
+        setAchievements([]);
+        setInProgressLocations([]);
       } finally {
         setLoading(false);
       }
@@ -171,25 +179,25 @@ const Collections = () => {
   const refreshAchievements = async () => {
     try {
       setLoading(true);
-      // Fetch both regular achievements and level achievements
-      const [regularAchievements, levelAchievements] = await Promise.all([
+      // Fetch achievements, level achievements, and all location levels (in-progress)
+      const [regularAchievements, levelAchievements, userLevels] = await Promise.all([
         apiService.getLocationAchievements().catch(() => []),
-        apiService.getLevelAchievements().catch(() => [])
+        apiService.getLevelAchievements().catch(() => []),
+        apiService.getAllUserLevels().catch(() => [])
       ]);
       
-      // Ensure both are arrays
+      // Ensure all are arrays
       const safeRegularAchievements = Array.isArray(regularAchievements) ? regularAchievements : [];
       const safeLevelAchievements = Array.isArray(levelAchievements) ? levelAchievements : [];
+      const safeUserLevels = Array.isArray(userLevels) ? userLevels : [];
       
-      console.log('📊 Refreshed achievements:', { regularAchievements: safeRegularAchievements, levelAchievements: safeLevelAchievements });
-      console.log('📊 Refreshed level achievements details:', safeLevelAchievements.map(a => ({
-        location_name: a.location_name,
-        level: a.level,
-        required_time_hours: a.required_time_hours,
-        achieved_time_hours: a.achieved_time_hours
-      })));
+      console.log('📊 Refreshed data:', { 
+        regularAchievements: safeRegularAchievements, 
+        levelAchievements: safeLevelAchievements,
+        userLevels: safeUserLevels 
+      });
       
-      // Combine and format achievements
+      // Combine and format completed achievements
       const allAchievements = [
         ...safeRegularAchievements.map(achievement => ({
           ...achievement,
@@ -205,7 +213,29 @@ const Collections = () => {
         }))
       ];
       
+      // Format in-progress locations
+      const inProgress = safeUserLevels
+        .filter(level => level.total_time_spent_seconds > 0)
+        .map(level => {
+          const requiredTime = calculateLevelTime(level.current_level);
+          const currentTime = level.total_time_spent_seconds / 3600; // Convert to hours
+          const progressPercent = Math.min((currentTime / requiredTime) * 100, 100);
+          
+          return {
+            id: level.location_id,
+            location_id: level.location_id,
+            location_name: level.location_name || 'Unknown Location',
+            current_level: level.current_level,
+            total_time_spent_seconds: level.total_time_spent_seconds,
+            required_time_hours: requiredTime,
+            current_time_hours: currentTime,
+            progress_percent: progressPercent,
+            is_completed: progressPercent >= 100
+          };
+        });
+      
       setAchievements(allAchievements);
+      setInProgressLocations(inProgress);
     } catch (error) {
       console.error('Error refreshing achievements:', error);
     } finally {
@@ -266,10 +296,96 @@ const Collections = () => {
       </header>
 
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
+        <div className="px-4 py-6 sm:px-0 space-y-6">
+          
+          {/* In-Progress Conquests Section */}
+          {!loading && inProgressLocations.length > 0 && (
+            <div className="bg-[#37006b] shadow rounded-lg">
+              <div className="px-4 py-5 sm:p-6">
+                <h2 className="text-lg font-medium text-[#f2ede1] mb-6">⚔️ Territories Being Conquered</h2>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {inProgressLocations.map((location) => (
+                    <div
+                      key={location.id}
+                      className="rounded-lg p-6 border bg-gradient-to-br from-yellow-50 to-orange-100 border-orange-200"
+                    >
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center space-x-3">
+                          <div className="text-4xl">
+                            {getAchievementIcon(location.location_name)}
+                          </div>
+                          <div className={`w-10 h-10 rounded-full ${getLevelColor(location.current_level)} flex items-center justify-center text-white font-bold text-lg`}>
+                            {location.current_level}
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <span className="bg-orange-100 text-orange-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                            {getLevelTitle(location.current_level)}
+                          </span>
+                          <span className="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                            In Progress
+                          </span>
+                        </div>
+                      </div>
+                      
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                        {location.location_name}
+                        <span className="ml-2 text-sm text-orange-600 font-medium">
+                          (Level {location.current_level})
+                        </span>
+                      </h3>
+                      
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Current Progress:</span>
+                          <span className="font-medium text-orange-600">{formatTime(location.current_time_hours)}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Target for Level {location.current_level}:</span>
+                          <span className="font-medium">{formatTime(location.required_time_hours)}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Time Remaining:</span>
+                          <span className="font-medium text-blue-600">
+                            {formatTime(Math.max(0, location.required_time_hours - location.current_time_hours))}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      <div className="mt-4 pt-4 border-t border-orange-200">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-gray-600">Conquest Progress</span>
+                          <span className="text-sm font-medium text-orange-600">
+                            {Math.round(location.progress_percent)}%
+                          </span>
+                        </div>
+                        <div className="mt-2 w-full bg-orange-200 rounded-full h-3 overflow-hidden">
+                          <div
+                            className="h-3 rounded-full bg-gradient-to-r from-yellow-400 to-orange-600 transition-all duration-500"
+                            style={{
+                              width: `${location.progress_percent}%`
+                            }}
+                          ></div>
+                        </div>
+                        <div className="text-xs text-orange-600 font-medium mt-1 text-center">
+                          {location.progress_percent >= 100 
+                            ? '🎉 Ready to advance!' 
+                            : `${Math.round(100 - location.progress_percent)}% until conquest`
+                          }
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Conquered Achievements Section */}
           <div className="bg-[#37006b] shadow rounded-lg">
             <div className="px-4 py-5 sm:p-6">
-              <h2 className="text-lg font-medium text-[#f2ede1] mb-6">Conquered Achievements</h2>
+              <h2 className="text-lg font-medium text-[#f2ede1] mb-6">✅ Conquered Achievements</h2>
               
               {loading ? (
                 <div className="flex justify-center items-center py-8">

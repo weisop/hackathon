@@ -1,12 +1,18 @@
 // AI Service for server-side Gemini integration
+import { API_CONFIG } from '../config/environment.js';
+
 class AIService {
   constructor() {
-    this.baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+    // Use the same base URL as the main API service
+    this.baseUrl = API_CONFIG.baseURL.replace('/api', ''); // Remove /api suffix since we add it in the routes
+    console.log('🤖 AI Service initialized with base URL:', this.baseUrl);
   }
 
   async generateLocationDescription(locationName, context = {}) {
     try {
-      const response = await fetch(`${this.baseUrl}/api/ai/description`, {
+      const url = `${this.baseUrl}/api/ai/description`;
+      console.log('🤖 Calling AI description endpoint:', url);
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -32,7 +38,9 @@ class AIService {
 
   async generateLocationRecommendations(userHistory, currentLocation) {
     try {
-      const response = await fetch(`${this.baseUrl}/api/ai/recommendations`, {
+      const url = `${this.baseUrl}/api/ai/recommendations`;
+      console.log('🤖 Calling AI recommendations endpoint:', url);
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -58,7 +66,9 @@ class AIService {
 
   async generateLocationInsights(userData, locationData) {
     try {
-      const response = await fetch(`${this.baseUrl}/api/ai/insights`, {
+      const url = `${this.baseUrl}/api/ai/insights`;
+      console.log('🤖 Calling AI insights endpoint:', url);
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

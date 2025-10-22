@@ -1077,10 +1077,15 @@ app.get('/api/location-sessions/history', requireAuth, async (req, res) => {
 
 // Update session checkpoint (for real-time tracking)
 app.post('/api/location-sessions/checkpoint', requireAuth, async (req, res) => {
+  console.log('📍 POST /api/location-sessions/checkpoint - Request received');
+  console.log('📍 Request body:', req.body);
+  console.log('📍 User:', req.user?.id);
+  
   try {
     const { sessionId, latitude, longitude, accuracy } = req.body;
     
     if (!sessionId || !latitude || !longitude) {
+      console.log('❌ Missing required fields:', { sessionId, latitude, longitude });
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
@@ -1094,6 +1099,7 @@ app.post('/api/location-sessions/checkpoint', requireAuth, async (req, res) => {
       .single();
 
     if (sessionError || !session) {
+      console.log('❌ Active session not found for id:', sessionId);
       return res.status(404).json({ error: 'Active session not found' });
     }
 
@@ -1114,9 +1120,11 @@ app.post('/api/location-sessions/checkpoint', requireAuth, async (req, res) => {
       .single();
 
     if (error) throw error;
+    
+    console.log('✅ Checkpoint added successfully');
     res.json({ message: 'Checkpoint added', checkpoint, durationSeconds });
   } catch (error) {
-    console.error('Error adding session checkpoint:', error);
+    console.error('❌ Error adding session checkpoint:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -1130,11 +1138,17 @@ app.get('/api/location-sessions/achievements', requireAuth, async (req, res) => 
       .eq('user_id', req.user.id)
       .order('achievement_date', { ascending: false });
 
-    if (error) throw error;
-    res.json(achievements);
+    if (error) {
+      console.error('Error fetching achievements:', error);
+      // Return empty array if table doesn't exist or query fails
+      return res.json([]);
+    }
+    
+    res.json(achievements || []);
   } catch (error) {
     console.error('Error fetching achievements:', error);
-    res.status(500).json({ error: error.message });
+    // Return empty array instead of error to prevent UI crashes
+    res.json([]);
   }
 });
 
@@ -1200,11 +1214,17 @@ app.get('/api/location-levels', requireAuth, async (req, res) => {
       .eq('user_id', req.user.id)
       .order('updated_at', { ascending: false });
 
-    if (error) throw error;
-    res.json(levels);
+    if (error) {
+      console.error('Error getting user levels:', error);
+      // Return empty array if table doesn't exist or query fails
+      return res.json([]);
+    }
+    
+    res.json(levels || []);
   } catch (error) {
     console.error('Error getting user levels:', error);
-    res.status(500).json({ error: error.message });
+    // Return empty array instead of error to prevent UI crashes
+    res.json([]);
   }
 });
 
@@ -1295,11 +1315,17 @@ app.get('/api/location-levels/achievements', requireAuth, async (req, res) => {
       .eq('user_id', req.user.id)
       .order('achievement_date', { ascending: false });
 
-    if (error) throw error;
-    res.json(achievements);
+    if (error) {
+      console.error('Error getting level achievements:', error);
+      // Return empty array if table doesn't exist or query fails
+      return res.json([]);
+    }
+    
+    res.json(achievements || []);
   } catch (error) {
     console.error('Error getting level achievements:', error);
-    res.status(500).json({ error: error.message });
+    // Return empty array instead of error to prevent UI crashes
+    res.json([]);
   }
 });
 

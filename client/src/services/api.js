@@ -415,10 +415,13 @@ export const apiService = {
   // Add session checkpoint
   addSessionCheckpoint: async (checkpointData) => {
     try {
+      console.log('🔍 Adding checkpoint to:', `${API_BASE_URL}/location-sessions/checkpoint`);
+      console.log('🔍 Checkpoint data:', checkpointData);
       const response = await api.post('/location-sessions/checkpoint', checkpointData);
       return response.data;
     } catch (error) {
       console.error('Error adding session checkpoint:', error);
+      console.error('Base URL:', API_BASE_URL);
       throw error;
     }
   },
