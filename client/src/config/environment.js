@@ -11,11 +11,11 @@ const getApiBaseUrl = () => {
     }
     
     // Return default for initial setup
-    return 'http://localhost:3001';
+    return 'http://localhost:3001/api';
   }
   
   // Production URL
-  return import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+  return import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
 };
 
 // Enhanced port detection that checks shared configuration
@@ -27,7 +27,7 @@ const detectApiPortWithSync = async () => {
       const config = await response.json();
       if (config.port) {
         console.log(`📋 Using synchronized port: ${config.port}`);
-        return `http://localhost:${config.port}`;
+        return `http://localhost:${config.port}/api`;
       }
     }
   } catch (error) {
@@ -35,7 +35,9 @@ const detectApiPortWithSync = async () => {
   }
   
   // Fallback to regular port detection
-  return await portDetector.detectApiPort();
+  const detectedUrl = await portDetector.detectApiPort();
+  // Add /api suffix if not already present
+  return detectedUrl.endsWith('/api') ? detectedUrl : `${detectedUrl}/api`;
 };
 
 export const API_CONFIG = {
@@ -44,7 +46,7 @@ export const API_CONFIG = {
   forceDetection: () => portDetector.forceDetection(),
   getCurrentPort: () => portDetector.getCurrentPort(),
   isCurrentPortAvailable: () => portDetector.isCurrentPortAvailable(),
-  timeout: 5000,
+  timeout: 15000, // Increased from 5000ms to 15000ms
   retryAttempts: 3
 };
 

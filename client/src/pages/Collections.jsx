@@ -17,8 +17,12 @@ const Collections = () => {
           apiService.getLevelAchievements().catch(() => [])
         ]);
         
-        console.log('📊 Fetched achievements:', { regularAchievements, levelAchievements });
-        console.log('📊 Level achievements details:', levelAchievements.map(a => ({
+        // Ensure both are arrays
+        const safeRegularAchievements = Array.isArray(regularAchievements) ? regularAchievements : [];
+        const safeLevelAchievements = Array.isArray(levelAchievements) ? levelAchievements : [];
+        
+        console.log('📊 Fetched achievements:', { regularAchievements: safeRegularAchievements, levelAchievements: safeLevelAchievements });
+        console.log('📊 Level achievements details:', safeLevelAchievements.map(a => ({
           location_name: a.location_name,
           level: a.level,
           required_time_hours: a.required_time_hours,
@@ -27,12 +31,12 @@ const Collections = () => {
         
         // Combine and format achievements
         const allAchievements = [
-          ...regularAchievements.map(achievement => ({
+          ...safeRegularAchievements.map(achievement => ({
             ...achievement,
             type: 'regular',
             level: 1
           })),
-          ...levelAchievements.map(achievement => ({
+          ...safeLevelAchievements.map(achievement => ({
             ...achievement,
             type: 'level',
             target_hours: achievement.required_time_hours,
@@ -173,8 +177,12 @@ const Collections = () => {
         apiService.getLevelAchievements().catch(() => [])
       ]);
       
-      console.log('📊 Refreshed achievements:', { regularAchievements, levelAchievements });
-      console.log('📊 Refreshed level achievements details:', levelAchievements.map(a => ({
+      // Ensure both are arrays
+      const safeRegularAchievements = Array.isArray(regularAchievements) ? regularAchievements : [];
+      const safeLevelAchievements = Array.isArray(levelAchievements) ? levelAchievements : [];
+      
+      console.log('📊 Refreshed achievements:', { regularAchievements: safeRegularAchievements, levelAchievements: safeLevelAchievements });
+      console.log('📊 Refreshed level achievements details:', safeLevelAchievements.map(a => ({
         location_name: a.location_name,
         level: a.level,
         required_time_hours: a.required_time_hours,
@@ -183,12 +191,12 @@ const Collections = () => {
       
       // Combine and format achievements
       const allAchievements = [
-        ...regularAchievements.map(achievement => ({
+        ...safeRegularAchievements.map(achievement => ({
           ...achievement,
           type: 'regular',
           level: 1
         })),
-        ...levelAchievements.map(achievement => ({
+        ...safeLevelAchievements.map(achievement => ({
           ...achievement,
           type: 'level',
           target_hours: achievement.required_time_hours,

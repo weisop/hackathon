@@ -4,11 +4,23 @@ import { API_CONFIG } from '../config/environment.js';
 // Dynamic API URL detection
 let API_BASE_URL = API_CONFIG.baseURL;
 
+// Create axios instance first
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  timeout: API_CONFIG.timeout,
+});
+
 // Function to detect the correct API port
 const detectApiUrl = async () => {
   try {
     const detectedUrl = await API_CONFIG.detectPort();
-    API_BASE_URL = `${detectedUrl}/api`;
+    // The detectedUrl already includes /api from environment.js
+    API_BASE_URL = detectedUrl;
+    // Update axios instance baseURL
+    api.defaults.baseURL = API_BASE_URL;
     console.log(`🔗 API detected at: ${API_BASE_URL}`);
     return API_BASE_URL;
   } catch (error) {
@@ -17,16 +29,8 @@ const detectApiUrl = async () => {
   }
 };
 
-// Initialize API URL
+// Initialize API URL detection
 detectApiUrl();
-
-const api = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  timeout: API_CONFIG.timeout,
-});
 
 // Add request interceptor to handle dynamic URL updates and authentication
 api.interceptors.request.use(async (config) => {

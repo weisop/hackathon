@@ -140,6 +140,7 @@ export default function MapView({
   
   const startTimeRef = useRef(null);
   const locationBufferRef = useRef([]);
+  const lastBackendSaveRef = useRef(0); // Track last time we saved to backend
 
   // Location smoothing algorithm (moving average)
   const smoothLocation = useCallback((newLocation, buffer) => {
@@ -434,7 +435,7 @@ export default function MapView({
   //   }
   // }, []);
 
-  // Save location to backend
+  // Save location to backend (throttled to once per 10 seconds)
   const saveLocationToBackend = useCallback(async (location) => {
     // Check if user is authenticated before attempting to save
     const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
@@ -442,6 +443,14 @@ export default function MapView({
       // Silently skip location save if no token
       return;
     }
+
+    // Throttle: only save if at least 10 seconds have passed since last save
+    const now = Date.now();
+    if (now - lastBackendSaveRef.current < 10000) {
+      return; // Skip this save
+    }
+    
+    lastBackendSaveRef.current = now;
 
     try {
       await apiService.trackLocation({
@@ -462,9 +471,15 @@ export default function MapView({
     checkGoogleMapsConfig();
   }, [checkGoogleMapsConfig]);
 
-  // Recover active sessions on component mount
+  // Recover active sessions on component mount (only once)
   useEffect(() => {
+    let hasRecovered = false;
+    
     const recoverActiveSessions = async () => {
+      // Prevent multiple simultaneous calls
+      if (hasRecovered) return;
+      hasRecovered = true;
+      
       try {
         // Check authentication first
         const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
@@ -497,11 +512,13 @@ export default function MapView({
         }
       } catch (error) {
         // Silently handle session recovery errors
+        console.log('⚠️ Session recovery error:', error.message);
       }
     };
 
+    // Only recover once on mount
     recoverActiveSessions();
-  }, [markers]);
+  }, []); // Empty dependency array - only run once on mount
 
   // Friends functionality temporarily disabled
   // useEffect(() => {
@@ -589,7 +606,14 @@ export default function MapView({
               );
               location.distanceFromLast = distance;
             }
-            return [...newHistory.slice(-99), location]; // Keep last 100 locations
+            
+            // Filter out locations older than 1 minute (60000ms)
+            const oneMinuteAgo = Date.now() - 60000;
+            const recentLocations = [...newHistory, location].filter(loc => 
+              loc.timestamp > oneMinuteAgo
+            );
+            
+            return recentLocations;
           });
           
           onLocationUpdate?.(smoothed);
@@ -612,8 +636,8 @@ export default function MapView({
     // Track location immediately
     trackLocation();
     
-    // Set up interval to track every 30 seconds
-    const intervalId = setInterval(trackLocation, 30000);
+    // Set up interval to track every 3 seconds
+    const intervalId = setInterval(trackLocation, 3000);
 
     return () => {
       clearInterval(intervalId);
@@ -837,7 +861,7 @@ export default function MapView({
           {/* Location history trail */}
           {locationHistory.map((location, index) => (
             <Marker
-              key={`history-${location.timestamp || index}-${location.latitude}-${location.longitude}`}
+              key={`history-${index}-${location.timestamp}-${location.latitude}-${location.longitude}`}
               position={[location.latitude, location.longitude]}
               icon={L.divIcon({
                 className: 'history-marker',
