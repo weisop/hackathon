@@ -65,21 +65,7 @@ serverProcess.stderr.on('data', (data) => {
   console.error(`❌ Server Error: ${data.toString()}`);
 });
 
-// Handle client output
-clientProcess.stdout.on('data', (data) => {
-  const output = data.toString();
-  if (output.includes('Local:')) {
-    console.log(`✅ Client: ${output.trim()}`);
-  } else if (output.includes('API detected at')) {
-    console.log(`🔗 Client: ${output.trim()}`);
-  } else {
-    console.log(`💻 Client: ${output.trim()}`);
-  }
-});
-
-clientProcess.stderr.on('data', (data) => {
-  console.error(`❌ Client Error: ${data.toString()}`);
-});
+// Handle client output (moved inside setTimeout)
 
 // Handle process exits
 serverProcess.on('exit', (code) => {

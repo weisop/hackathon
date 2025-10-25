@@ -103,3 +103,4 @@ To enable actual Gemini AI responses:
 - `hackathon/client/src/components/AILocationRecommendations.jsx` - Uses AI service  
 - `hackathon/client/src/components/AIInsightsDashboard.jsx` - Uses AI service
 
+

@@ -136,3 +136,4 @@ Check the server logs for detailed error messages:
 - Console logs show "Error getting achievements:", "Error getting user levels:", etc.
 - These indicate database connection or table access issues
 
+

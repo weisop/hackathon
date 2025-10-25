@@ -88,3 +88,4 @@ For local development with a fixed port (3001), you can disable it.
 - `hackathon/client/src/config/environment.js` - API configuration
 - `hackathon/server/server.js` - Backend server (runs on port 3001)
 
+
