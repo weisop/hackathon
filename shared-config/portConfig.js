@@ -80,6 +80,34 @@ class SharedPortConfig {
     return age < 30000; // 30 seconds
   }
 
+  // Validate if the configured port is still active
+  async validatePort() {
+    const config = this.getPortConfig();
+    if (!config || !config.port) return false;
+    
+    try {
+      const response = await fetch(`http://localhost:${config.port}/api/health`, {
+        method: 'GET',
+        timeout: 2000
+      });
+      return response.ok;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  // Clean up stale configurations
+  async cleanupStale() {
+    const config = this.getPortConfig();
+    if (!config) return;
+    
+    // If config is old or port is not responding, clean it up
+    if (!this.isConfigRecent() || !(await this.validatePort())) {
+      console.log('🧹 Cleaning up stale port configuration...');
+      this.cleanup();
+    }
+  }
+
   // Clean up old config
   cleanup() {
     try {

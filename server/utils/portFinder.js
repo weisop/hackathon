@@ -29,17 +29,36 @@ class PortFinder {
     console.log('🔍 Scanning for available port...');
     
     for (const port of this.commonPorts) {
-      const isAvailable = await this.isPortAvailable(port);
-      if (isAvailable) {
-        console.log(`✅ Port ${port} is available`);
-        return port;
-      } else {
-        console.log(`❌ Port ${port} is in use`);
+      try {
+        const isAvailable = await this.isPortAvailable(port);
+        if (isAvailable) {
+          console.log(`✅ Port ${port} is available`);
+          return port;
+        } else {
+          console.log(`❌ Port ${port} is in use`);
+        }
+      } catch (error) {
+        console.log(`❌ Port ${port} check failed: ${error.message}`);
+        continue;
       }
     }
     
-    // If no common port is available, let the system assign one
-    console.log('⚠️ No common ports available, using system-assigned port');
+    // If no common port is available, try higher ports
+    console.log('⚠️ No common ports available, trying higher ports...');
+    for (let port = 3006; port <= 3010; port++) {
+      try {
+        const isAvailable = await this.isPortAvailable(port);
+        if (isAvailable) {
+          console.log(`✅ Port ${port} is available`);
+          return port;
+        }
+      } catch (error) {
+        continue;
+      }
+    }
+    
+    // Last resort: let the system assign a port
+    console.log('⚠️ No ports available in range, using system-assigned port');
     return 0; // 0 means let the system assign a port
   }
 

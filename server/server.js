@@ -1391,6 +1391,9 @@ app.use((req, res) => {
 // Start server with synchronized port detection
 const startServer = async () => {
   try {
+    // Clean up any stale configurations first
+    await sharedPortConfig.cleanupStale();
+    
     // Check if there's already a port configuration
     let PORT = sharedPortConfig.getServerPort();
     
@@ -1401,6 +1404,13 @@ const startServer = async () => {
       sharedPortConfig.setPortConfig(PORT);
     } else {
       console.log(`📋 Using configured port: ${PORT}`);
+      // Validate the port is still available
+      const isAvailable = await portFinder.isPortAvailable(PORT);
+      if (!isAvailable) {
+        console.log(`⚠️ Configured port ${PORT} is no longer available, finding new port...`);
+        PORT = await portFinder.findAvailablePort();
+        sharedPortConfig.setPortConfig(PORT);
+      }
     }
     
     const server = app.listen(PORT, () => {
