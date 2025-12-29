@@ -8,7 +8,6 @@ const Collections = () => {
   const [inProgressLocations, setInProgressLocations] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Helper function to calculate required time for a level
   const calculateLevelTime = (level) => {
     const baseTime = 0.167; // 10 minutes in hours
     return baseTime * Math.pow(1.5, level - 1);
@@ -18,25 +17,22 @@ const Collections = () => {
     const fetchAchievements = async () => {
       try {
         setLoading(true);
-        // Fetch achievements, level achievements, and all location levels (in-progress)
         const [regularAchievements, levelAchievements, userLevels] = await Promise.all([
           apiService.getLocationAchievements().catch(() => []),
           apiService.getLevelAchievements().catch(() => []),
           apiService.getAllUserLevels().catch(() => [])
         ]);
         
-        // Ensure all are arrays
         const safeRegularAchievements = Array.isArray(regularAchievements) ? regularAchievements : [];
         const safeLevelAchievements = Array.isArray(levelAchievements) ? levelAchievements : [];
         const safeUserLevels = Array.isArray(userLevels) ? userLevels : [];
         
-        console.log('📊 Fetched data:', { 
+        console.log('Fetched data:', { 
           regularAchievements: safeRegularAchievements, 
           levelAchievements: safeLevelAchievements,
           userLevels: safeUserLevels 
         });
         
-        // Combine and format completed achievements
         const allAchievements = [
           ...safeRegularAchievements.map(achievement => ({
             ...achievement,
@@ -52,7 +48,6 @@ const Collections = () => {
           }))
         ];
         
-        // Format in-progress locations (locations with time spent but not completed current level)
         const inProgress = safeUserLevels
           .filter(level => level.total_time_spent_seconds > 0)
           .map(level => {
